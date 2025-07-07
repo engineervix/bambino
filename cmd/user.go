@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"syscall"
+	"time"
 
 	"github.com/joho/godotenv"
 	"github.com/spf13/cobra"
@@ -22,9 +23,24 @@ var createUserCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		username, _ := cmd.Flags().GetString("username")
 		babyName, _ := cmd.Flags().GetString("baby-name")
+		birthDateStr, _ := cmd.Flags().GetString("birth-date")
 
 		if username == "" {
 			log.Fatal("Username is required")
+		}
+
+		// Parse birth date if provided
+		var birthDate time.Time
+		if birthDateStr != "" {
+			var err error
+			birthDate, err = time.Parse("2006-01-02", birthDateStr)
+			if err != nil {
+				log.Fatalf("Invalid birth date format. Use YYYY-MM-DD: %v", err)
+			}
+		} else {
+			// Default to 1 week ago
+			birthDate = time.Now().AddDate(0, 0, -7)
+			fmt.Printf("No birth date provided, using default: %s\n", birthDate.Format("2006-01-02"))
 		}
 
 		// Prompt for password
@@ -46,7 +62,7 @@ var createUserCmd = &cobra.Command{
 			log.Fatal("Passwords do not match")
 		}
 
-		createUser(username, string(password), babyName)
+		createUser(username, string(password), babyName, birthDate)
 	},
 }
 
@@ -55,10 +71,11 @@ func init() {
 
 	createUserCmd.Flags().StringP("username", "u", "", "Username for the new user (required)")
 	createUserCmd.Flags().StringP("baby-name", "b", "Baby", "Name of the baby")
+	createUserCmd.Flags().StringP("birth-date", "d", "", "Birth date (YYYY-MM-DD). Defaults to 1 week ago")
 	createUserCmd.MarkFlagRequired("username")
 }
 
-func createUser(username, password, babyName string) {
+func createUser(username, password, babyName string, birthDate time.Time) {
 	// Load .env file
 	if err := godotenv.Load(); err != nil {
 		log.Println("No .env file found")
@@ -66,6 +83,11 @@ func createUser(username, password, babyName string) {
 
 	// Load configuration
 	cfg := config.Load()
+
+	// Validate configuration
+	if err := cfg.Validate(); err != nil {
+		log.Fatalf("Configuration error: %v", err)
+	}
 
 	// Connect to database
 	db, err := database.Connect(cfg)
@@ -91,8 +113,9 @@ func createUser(username, password, babyName string) {
 
 	// Create baby profile
 	baby := models.Baby{
-		UserID: user.ID,
-		Name:   babyName,
+		UserID:    user.ID,
+		Name:      babyName,
+		BirthDate: birthDate,
 	}
 
 	if err := db.Create(&baby).Error; err != nil {
@@ -101,4 +124,7 @@ func createUser(username, password, babyName string) {
 
 	fmt.Printf("✅ User '%s' created successfully!\n", username)
 	fmt.Printf("   Baby profile '%s' created.\n", babyName)
+	fmt.Printf("   Birth date: %s (age: %d days)\n",
+		birthDate.Format("2006-01-02"),
+		int(time.Since(birthDate).Hours()/24))
 }

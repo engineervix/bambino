@@ -50,6 +50,11 @@ func testDatabaseConnection() {
 	// Load configuration
 	cfg := config.Load()
 
+	// Validate configuration
+	if err := cfg.Validate(); err != nil {
+		log.Fatalf("Configuration error: %v", err)
+	}
+
 	fmt.Printf("Testing database connection...\n")
 	fmt.Printf("Database Type: %s\n", cfg.DBType)
 
@@ -58,6 +63,8 @@ func testDatabaseConnection() {
 	} else {
 		fmt.Printf("Database Host: %s:%s\n", cfg.DBHost, cfg.DBPort)
 		fmt.Printf("Database Name: %s\n", cfg.DBName)
+		fmt.Printf("Database User: %s\n", cfg.DBUser)
+		fmt.Printf("SSL Mode: %s\n", cfg.DBSSLMode)
 	}
 
 	// Connect to database
@@ -104,6 +111,11 @@ func runMigrations() {
 
 	// Load configuration
 	cfg := config.Load()
+
+	// Validate configuration
+	if err := cfg.Validate(); err != nil {
+		log.Fatalf("Configuration error: %v", err)
+	}
 
 	// Connect to database
 	db, err := database.Connect(cfg)

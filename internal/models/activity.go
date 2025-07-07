@@ -30,27 +30,38 @@ func (a ActivityType) Value() (driver.Value, error) {
 }
 
 type Activity struct {
-	ID                uuid.UUID    `gorm:"type:uuid;primary_key;default:gen_random_uuid()"`
-	BabyID            uuid.UUID    `gorm:"type:uuid;not null"`
+	ID                uuid.UUID    `gorm:"type:varchar(36);primary_key"`
+	BabyID            uuid.UUID    `gorm:"type:varchar(36);not null;index"`
 	Type              ActivityType `gorm:"type:varchar(20);not null"`
 	StartTime         time.Time    `gorm:"not null"`
 	EndTime           *time.Time
 	Notes             string `gorm:"type:text"`
 	CreatedAt         time.Time
 	UpdatedAt         time.Time
-	Baby              Baby               `gorm:"foreignKey:BabyID"`
-	FeedActivity      *FeedActivity      `gorm:"foreignKey:ActivityID"`
-	DiaperActivity    *DiaperActivity    `gorm:"foreignKey:ActivityID"`
-	SleepActivity     *SleepActivity     `gorm:"foreignKey:ActivityID"`
-	PumpActivity      *PumpActivity      `gorm:"foreignKey:ActivityID"`
-	GrowthMeasurement *GrowthMeasurement `gorm:"foreignKey:ActivityID"`
-	HealthRecord      *HealthRecord      `gorm:"foreignKey:ActivityID"`
-	Milestone         *Milestone         `gorm:"foreignKey:ActivityID"`
+	Baby              Baby               `gorm:"foreignKey:BabyID;constraint:OnDelete:CASCADE"`
+	FeedActivity      *FeedActivity      `gorm:"foreignKey:ActivityID;constraint:OnDelete:CASCADE"`
+	DiaperActivity    *DiaperActivity    `gorm:"foreignKey:ActivityID;constraint:OnDelete:CASCADE"`
+	SleepActivity     *SleepActivity     `gorm:"foreignKey:ActivityID;constraint:OnDelete:CASCADE"`
+	PumpActivity      *PumpActivity      `gorm:"foreignKey:ActivityID;constraint:OnDelete:CASCADE"`
+	GrowthMeasurement *GrowthMeasurement `gorm:"foreignKey:ActivityID;constraint:OnDelete:CASCADE"`
+	HealthRecord      *HealthRecord      `gorm:"foreignKey:ActivityID;constraint:OnDelete:CASCADE"`
+	Milestone         *Milestone         `gorm:"foreignKey:ActivityID;constraint:OnDelete:CASCADE"`
 }
 
 func (a *Activity) BeforeCreate(tx *gorm.DB) error {
 	if a.ID == uuid.Nil {
 		a.ID = uuid.New()
+	}
+	return nil
+}
+
+// BeforeSave hook to validate required fields
+func (a *Activity) BeforeSave(tx *gorm.DB) error {
+	if a.BabyID == uuid.Nil {
+		return gorm.ErrInvalidField
+	}
+	if a.Type == "" {
+		return gorm.ErrInvalidField
 	}
 	return nil
 }

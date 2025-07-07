@@ -12,7 +12,7 @@ const (
 )
 
 type FeedActivity struct {
-	ActivityID      uuid.UUID `gorm:"type:uuid;primary_key"`
+	ActivityID      uuid.UUID `gorm:"type:varchar(36);primary_key"`
 	FeedType        FeedType  `gorm:"type:varchar(20);not null"`
 	AmountML        *float64  `gorm:"type:decimal(5,1)"`
 	DurationMinutes *int

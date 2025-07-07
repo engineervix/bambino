@@ -16,7 +16,7 @@ RUN go mod download
 COPY . .
 
 # Build the application
-RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o baby-tracker cmd/server/main.go
+RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o baby-tracker cmd/baby-tracker/main.go
 
 # Build stage for Vue frontend
 FROM node:22-alpine AS frontend-builder

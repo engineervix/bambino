@@ -19,8 +19,8 @@ func Connect(cfg *config.Config) (*gorm.DB, error) {
 	case "sqlite":
 		db, err = gorm.Open(sqlite.Open(cfg.DBPath), &gorm.Config{})
 	case "postgres":
-		dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=disable",
-			cfg.DBHost, cfg.DBUser, cfg.DBPassword, cfg.DBName, cfg.DBPort)
+		dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=%s",
+			cfg.DBHost, cfg.DBUser, cfg.DBPassword, cfg.DBName, cfg.DBPort, cfg.DBSSLMode)
 		db, err = gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	default:
 		return nil, fmt.Errorf("unsupported database type: %s", cfg.DBType)
