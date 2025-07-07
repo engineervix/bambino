@@ -59,7 +59,6 @@ func TestRunMigrations(t *testing.T) {
 	tables := []string{
 		"users",
 		"babies",
-		"sessions",
 		"activities",
 		"feed_activities",
 		"pump_activities",
@@ -93,7 +92,6 @@ func TestMigrations_Indexes(t *testing.T) {
 		{"activities", "idx_activities_baby_id"},
 		{"activities", "idx_activities_type"},
 		{"activities", "idx_activities_start_time"},
-		{"sessions", "idx_sessions_expires_at"},
 	}
 
 	for _, idx := range indexes {

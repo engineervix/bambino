@@ -27,7 +27,6 @@ func RunTestMigrations(db *gorm.DB, cfg *config.Config) error {
 	err := db.AutoMigrate(
 		&models.User{},
 		&models.Baby{},
-		&models.Session{},
 		&models.Activity{},
 		&models.FeedActivity{},
 		&models.PumpActivity{},

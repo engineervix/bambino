@@ -26,8 +26,6 @@ $$ language 'plpgsql';
 -- Create indexes for better performance (if not created by GORM)
 -- These will be created after tables exist, so they might fail on first run
 -- CREATE INDEX IF NOT EXISTS idx_activities_baby_id_start_time ON activities(baby_id, start_time DESC);
--- CREATE INDEX IF NOT EXISTS idx_sessions_user_id ON sessions(user_id);
--- CREATE INDEX IF NOT EXISTS idx_sessions_expires_at ON sessions(expires_at);
 
 -- Sample data for development (optional)
 -- Uncomment if you want some test data

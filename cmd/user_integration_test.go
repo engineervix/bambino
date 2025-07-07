@@ -185,7 +185,7 @@ func TestDatabaseMigration_Integration(t *testing.T) {
 
 	// Verify all tables exist
 	tables := []string{
-		"users", "babies", "sessions", "activities",
+		"users", "babies", "activities",
 		"feed_activities", "pump_activities", "diaper_activities",
 		"sleep_activities", "growth_measurements", "health_records", "milestones",
 	}
