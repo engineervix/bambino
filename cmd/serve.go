@@ -113,14 +113,14 @@ func runServer(overridePort string) {
 	api := e.Group("/api")
 	api.Use(authMiddleware.RequireAuthJSON())
 
-	// TODO: Add protected routes here
-	// api.GET("/activities", handlers.GetActivities)
-	// api.POST("/activities", handlers.CreateActivity)
-	// api.GET("/activities/:id", handlers.GetActivity)
-	// api.PUT("/activities/:id", handlers.UpdateActivity)
-	// api.DELETE("/activities/:id", handlers.DeleteActivity)
+	// Activity routes
+	api.GET("/activities", handlers.GetActivities)
+	api.POST("/activities", handlers.CreateActivity)
+	api.GET("/activities/:id", handlers.GetActivity)
+	api.PUT("/activities/:id", handlers.UpdateActivity)
+	api.DELETE("/activities/:id", handlers.DeleteActivity)
 
-	// Example protected route
+	// Example protected route (for testing)
 	api.GET("/test", func(c echo.Context) error {
 		userID := c.Get("user_id")
 		username := c.Get("username")
