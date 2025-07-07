@@ -1,0 +1,67 @@
+# docker-compose.yml
+version: "3.8"
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: baby-tracker-db
+    environment:
+      POSTGRES_USER: babytracker
+      POSTGRES_PASSWORD: dev_password
+      POSTGRES_DB: baby_tracker
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./scripts/init-db.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U babytracker -d baby_tracker"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: baby-tracker-app
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      PORT: 8080
+      ENV: development
+      DB_TYPE: postgres
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: baby_tracker
+      DB_USER: babytracker
+      DB_PASSWORD: dev_password
+      DB_SSLMODE: disable
+      SESSION_SECRET: dev-secret-change-in-production
+      ALLOWED_ORIGINS: http://localhost:5173,http://localhost:3000
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./:/app
+      - /app/tmp
+    command: air
+
+  # Optional: Frontend development container
+  frontend:
+    image: node:20-alpine
+    container_name: baby-tracker-frontend
+    working_dir: /app
+    volumes:
+      - ./web:/app
+      - /app/node_modules
+    ports:
+      - "5173:5173"
+    command: sh -c "npm install && npm run dev -- --host"
+    environment:
+      - VITE_API_URL=http://localhost:8080
+
+volumes:
+  postgres_data:
+# docker-compose.dev.yml (override for development)
+# Use with: docker-compose -f docker-compose.yml -f docker-compose.dev.yml up
