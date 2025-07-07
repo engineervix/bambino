@@ -2,9 +2,11 @@
 
 # Variables
 BINARY_NAME=baby-tracker
-GO_MODULE=github.com/yourusername/baby-tracker
+BINARY_PATH=bin/$(BINARY_NAME)
+MAIN_PATH=cmd/baby-tracker/main.go
+WEB_DIR=web
 
-# Go commands
+# Go parameters
 GOCMD=go
 GOBUILD=$(GOCMD) build
 GOCLEAN=$(GOCMD) clean
@@ -12,143 +14,245 @@ GOTEST=$(GOCMD) test
 GOGET=$(GOCMD) get
 GOMOD=$(GOCMD) mod
 
-# Directories
-BACKEND_DIR=.
-FRONTEND_DIR=web
-
-.PHONY: all build clean test deps run-backend run-frontend run dev setup help
+# Build variables
+VERSION?=dev
+BUILD_TIME=$(shell date +%FT%T%z)
+LDFLAGS=-ldflags "-X main.Version=${VERSION} -X main.BuildTime=${BUILD_TIME}"
 
 # Default target
-all: test build
+.DEFAULT_GOAL := help
 
-# Build the application
-build: build-frontend build-backend
+.PHONY: help
+help: ## Display this help message
+	@echo "Baby Tracker Makefile"
+	@echo "====================="
+	@echo ""
+	@echo "Usage: make [target]"
+	@echo ""
+	@echo "Targets:"
+	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "  %-20s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 
-build-backend:
-	@echo "Building backend..."
-	$(GOBUILD) -o $(BINARY_NAME) -v cmd/server/main.go
+# Development targets
+.PHONY: run
+run: ## Run the server
+	$(GOCMD) run $(MAIN_PATH) serve
 
-build-frontend:
-	@echo "Building frontend..."
-	cd $(FRONTEND_DIR) && npm run build
-
-# Clean build artifacts
-clean:
-	@echo "Cleaning..."
-	$(GOCLEAN)
-	rm -f $(BINARY_NAME)
-	rm -rf $(FRONTEND_DIR)/dist
-
-# Run tests
-test:
-	@echo "Running tests..."
-	$(GOTEST) -v ./...
-
-# Download dependencies
-deps:
-	@echo "Downloading Go dependencies..."
-	$(GOMOD) download
-	$(GOMOD) tidy
-	@echo "Installing frontend dependencies..."
-	cd $(FRONTEND_DIR) && npm install
-
-# Run backend only
-run-backend:
-	@echo "Starting backend server..."
-	$(GOCMD) run cmd/server/main.go
-
-# Run frontend only
-run-frontend:
-	@echo "Starting frontend development server..."
-	cd $(FRONTEND_DIR) && npm run dev
-
-# Run both frontend and backend (requires 2 terminals)
-run:
-	@echo "Start backend and frontend in separate terminals:"
-	@echo "  Terminal 1: make run-backend"
-	@echo "  Terminal 2: make run-frontend"
-
-# Development mode - watch for changes
-dev:
-	@echo "Starting development mode..."
-	@echo "Installing air for hot reload..."
-	@which air > /dev/null || go install github.com/cosmtrek/air@latest
-	@echo "Starting backend with hot reload..."
+.PHONY: dev
+dev: ## Run with hot reload (requires air)
+	@if ! command -v air > /dev/null; then \
+		echo "Installing air..."; \
+		go install github.com/cosmtrek/air@latest; \
+	fi
 	air
 
-# Database operations
-db-test:
-	@echo "Testing database connection..."
-	$(GOCMD) run scripts/test-db.go
+.PHONY: dev-frontend
+dev-frontend: ## Run frontend development server
+	cd $(WEB_DIR) && npm run dev
 
-db-reset:
-	@echo "Resetting database..."
-	RESET_DB=true $(GOCMD) run cmd/server/main.go
+# Build targets
+.PHONY: build
+build: ## Build the binary
+	@echo "Building $(BINARY_NAME)..."
+	$(GOBUILD) $(LDFLAGS) -o $(BINARY_PATH) $(MAIN_PATH)
+	@echo "Build complete: $(BINARY_PATH)"
 
-create-user:
-	@echo "Creating user..."
-	@echo "Usage: make create-user ARGS=\"--username=parent --password=pass123\""
-	$(GOCMD) run scripts/create-user.go $(ARGS)
+.PHONY: build-frontend
+build-frontend: ## Build frontend for production
+	@echo "Building frontend..."
+	cd $(WEB_DIR) && npm run build
 
-# Initial project setup
-setup: deps
-	@echo "Setting up project..."
-	@if [ ! -f .env ]; then \
-		cp .env.example .env; \
-		echo "Created .env file from template"; \
-		echo "Please edit .env with your configuration"; \
-	else \
-		echo ".env file already exists"; \
+.PHONY: build-all
+build-all: build-frontend build ## Build both frontend and backend
+
+.PHONY: build-docker
+build-docker: ## Build Docker image
+	docker build -t $(BINARY_NAME):latest .
+
+# Database targets
+.PHONY: db-test
+db-test: ## Test database connection
+	$(GOCMD) run $(MAIN_PATH) db test
+
+.PHONY: migrate
+migrate: ## Run database migrations
+	$(GOCMD) run $(MAIN_PATH) db migrate
+
+.PHONY: migrate-down
+migrate-down: ## Rollback database migrations
+	$(GOCMD) run $(MAIN_PATH) db migrate down
+
+.PHONY: db-reset
+db-reset: ## Reset database (drop all tables and re-migrate)
+	@echo "WARNING: This will delete all data!"
+	@read -p "Are you sure? [y/N] " -n 1 -r; \
+	if [[ $$REPLY =~ ^[Yy]$$ ]]; then \
+		$(GOCMD) run $(MAIN_PATH) db reset; \
 	fi
-	@echo "Setup complete!"
 
-# Format code
-fmt:
-	@echo "Formatting Go code..."
-	$(GOCMD) fmt ./...
+# User management targets
+.PHONY: create-user
+create-user: ## Create a new user (use with ARGS="-u username -b 'Baby Name'")
+	$(GOCMD) run $(MAIN_PATH) create-user $(ARGS)
 
-# Lint code
-lint:
-	@echo "Linting code..."
-	@which golangci-lint > /dev/null || go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
-	golangci-lint run
+# Testing targets
+.PHONY: test
+test: ## Run all tests
+	$(GOTEST) -v ./...
 
-# Generate code coverage
-coverage:
-	@echo "Running tests with coverage..."
-	$(GOTEST) -coverprofile=coverage.out ./...
+.PHONY: test-coverage
+test-coverage: ## Run tests with coverage report
+	$(GOTEST) -v -coverprofile=coverage.out ./...
 	$(GOCMD) tool cover -html=coverage.out -o coverage.html
 	@echo "Coverage report generated: coverage.html"
 
-# Docker operations
-docker-build:
-	@echo "Building Docker image..."
-	docker build -t $(BINARY_NAME):latest .
+.PHONY: test-integration
+test-integration: ## Run integration tests
+	$(GOTEST) -v -tags=integration ./...
 
-docker-run:
-	@echo "Running Docker container..."
-	docker run -p 8080:8080 --env-file .env $(BINARY_NAME):latest
+# Dependency management
+.PHONY: deps
+deps: deps-backend deps-frontend ## Install all dependencies
 
-# Help
-help:
-	@echo "Baby Tracker - Available commands:"
-	@echo ""
-	@echo "  make setup          - Initial project setup"
-	@echo "  make deps           - Download all dependencies"
-	@echo "  make build          - Build both frontend and backend"
-	@echo "  make run-backend    - Run backend server"
-	@echo "  make run-frontend   - Run frontend dev server"
-	@echo "  make dev            - Run backend with hot reload (requires air)"
-	@echo "  make test           - Run tests"
-	@echo "  make fmt            - Format Go code"
-	@echo "  make lint           - Lint code"
-	@echo "  make clean          - Clean build artifacts"
-	@echo ""
-	@echo "Database commands:"
-	@echo "  make db-test        - Test database connection"
-	@echo "  make db-reset       - Reset database (WARNING: deletes all data)"
-	@echo "  make create-user ARGS=\"--username=X --password=Y\" - Create a user"
-	@echo ""
-	@echo "Docker commands:"
-	@echo "  make docker-build   - Build Docker image"
-	@echo "  make docker-run     - Run Docker container"
+.PHONY: deps-backend
+deps-backend: ## Install backend dependencies
+	$(GOMOD) download
+	$(GOMOD) tidy
+
+.PHONY: deps-frontend
+deps-frontend: ## Install frontend dependencies
+	cd $(WEB_DIR) && npm install
+
+.PHONY: deps-update
+deps-update: ## Update all dependencies
+	$(GOGET) -u ./...
+	$(GOMOD) tidy
+	cd $(WEB_DIR) && npm update
+
+# Linting and formatting
+.PHONY: lint
+lint: lint-backend lint-frontend ## Run all linters
+
+.PHONY: lint-backend
+lint-backend: ## Run Go linter
+	@if ! command -v golangci-lint > /dev/null; then \
+		echo "Installing golangci-lint..."; \
+		curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin; \
+	fi
+	golangci-lint run
+
+.PHONY: lint-frontend
+lint-frontend: ## Run frontend linter
+	cd $(WEB_DIR) && npm run lint
+
+.PHONY: fmt
+fmt: ## Format Go code
+	$(GOCMD) fmt ./...
+
+# Cleaning targets
+.PHONY: clean
+clean: ## Clean build artifacts
+	$(GOCLEAN)
+	rm -rf $(BINARY_PATH)
+	rm -rf tmp/
+	rm -rf coverage.out coverage.html
+
+.PHONY: clean-all
+clean-all: clean ## Clean everything including dependencies
+	rm -rf vendor/
+	rm -rf $(WEB_DIR)/node_modules
+	rm -rf $(WEB_DIR)/dist
+
+# Docker targets
+.PHONY: docker-up
+docker-up: ## Start Docker containers
+	docker-compose up -d
+
+.PHONY: docker-down
+docker-down: ## Stop Docker containers
+	docker-compose down
+
+.PHONY: docker-logs
+docker-logs: ## View Docker logs
+	docker-compose logs -f
+
+.PHONY: docker-reset
+docker-reset: docker-down ## Reset Docker environment
+	docker-compose down -v
+	docker-compose up -d
+
+# Utility targets
+.PHONY: setup
+setup: deps ## Initial project setup
+	@echo "Setting up Baby Tracker..."
+	@if [ ! -f .env ]; then \
+		echo "Creating .env file..."; \
+		cp .env.example .env; \
+		echo "Please edit .env with your configuration"; \
+	fi
+	@echo "Running initial migrations..."
+	$(GOCMD) run $(MAIN_PATH) db migrate
+	@echo "Setup complete!"
+
+.PHONY: check
+check: lint test ## Run all checks (lint + test)
+
+.PHONY: watch-backend
+watch-backend: ## Watch backend files for changes (requires entr)
+	@if ! command -v entr > /dev/null; then \
+		echo "Please install entr: https://github.com/eradman/entr"; \
+		exit 1; \
+	fi
+	find . -name "*.go" -not -path "./vendor/*" -not -path "./web/*" | entr -r make run
+
+.PHONY: generate
+generate: ## Run go generate
+	$(GOCMD) generate ./...
+
+.PHONY: mod-verify
+mod-verify: ## Verify dependencies
+	$(GOMOD) verify
+
+.PHONY: mod-vendor
+mod-vendor: ## Create vendor directory
+	$(GOMOD) vendor
+
+# Release targets
+.PHONY: release
+release: clean build-all ## Build release version
+	@echo "Building release version $(VERSION)..."
+	mkdir -p releases
+	tar -czf releases/$(BINARY_NAME)-$(VERSION).tar.gz $(BINARY_PATH) README.md
+
+.PHONY: version
+version: ## Display version information
+	@if [ -f $(BINARY_PATH) ]; then \
+		./$(BINARY_PATH) version; \
+	else \
+		echo "Binary not built. Run 'make build' first."; \
+	fi
+
+# Development database shortcuts
+.PHONY: db-shell
+db-shell: ## Open database shell
+	@if [ "$(DB_TYPE)" = "postgres" ]; then \
+		psql -h localhost -U postgres -d baby_tracker; \
+	else \
+		sqlite3 baby-tracker.db; \
+	fi
+
+# Quick commands for development
+.PHONY: quick-start
+quick-start: deps setup dev ## Quick start for development
+
+.PHONY: seed
+seed: ## Seed database with test data
+	$(GOCMD) run $(MAIN_PATH) db seed
+
+# CI/CD targets
+.PHONY: ci
+ci: deps lint test build ## Run CI pipeline
+
+.PHONY: cd
+cd: build-all ## Run CD pipeline
+	@echo "Deploying application..."
+	# Add deployment steps here
