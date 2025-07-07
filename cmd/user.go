@@ -8,12 +8,12 @@ import (
 
 	"github.com/joho/godotenv"
 	"github.com/spf13/cobra"
-	"golang.org/x/crypto/bcrypt"
 	"golang.org/x/term"
 
 	"github.com/engineervix/baby-tracker/internal/config"
 	"github.com/engineervix/baby-tracker/internal/database"
 	"github.com/engineervix/baby-tracker/internal/models"
+	"github.com/engineervix/baby-tracker/internal/utils"
 )
 
 var createUserCmd = &cobra.Command{
@@ -95,16 +95,17 @@ func createUser(username, password, babyName string, birthDate time.Time) {
 		log.Fatalf("Failed to connect to database: %v", err)
 	}
 
-	// Hash password
-	hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	// Hash password using Argon2
+	fmt.Println("Hashing password...")
+	hash, err := utils.HashPassword(password)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("Failed to hash password: %v", err)
 	}
 
 	// Create user
 	user := models.User{
 		Username:     username,
-		PasswordHash: string(hash),
+		PasswordHash: hash,
 	}
 
 	if err := db.Create(&user).Error; err != nil {
@@ -127,4 +128,5 @@ func createUser(username, password, babyName string, birthDate time.Time) {
 	fmt.Printf("   Birth date: %s (age: %d days)\n",
 		birthDate.Format("2006-01-02"),
 		int(time.Since(birthDate).Hours()/24))
+	fmt.Printf("   Password hashed with Argon2id\n")
 }

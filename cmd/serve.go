@@ -5,12 +5,16 @@ import (
 	"strings"
 
 	"github.com/joho/godotenv"
+	"github.com/labstack/echo-contrib/session"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/spf13/cobra"
 
 	"github.com/engineervix/baby-tracker/internal/config"
 	"github.com/engineervix/baby-tracker/internal/database"
+	"github.com/engineervix/baby-tracker/internal/handlers"
+	authMiddleware "github.com/engineervix/baby-tracker/internal/middleware"
+	"github.com/engineervix/baby-tracker/internal/utils"
 )
 
 var serveCmd = &cobra.Command{
@@ -59,7 +63,7 @@ func runServer(overridePort string) {
 	// Create Echo instance
 	e := echo.New()
 
-	// Middleware
+	// Basic middleware
 	e.Use(middleware.Logger())
 	e.Use(middleware.Recover())
 
@@ -72,6 +76,15 @@ func runServer(overridePort string) {
 	}
 	e.Use(middleware.CORSWithConfig(corsConfig))
 
+	// Session middleware
+	sessionStore := utils.CreateSessionStore(utils.SessionConfig{
+		Secret:   cfg.SessionSecret,
+		MaxAge:   cfg.SessionMaxAge,
+		HttpOnly: true,
+		Secure:   cfg.Env == "production", // Only secure in production
+	})
+	e.Use(session.Middleware(sessionStore))
+
 	// Store config and db in context for handlers
 	e.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
@@ -81,7 +94,7 @@ func runServer(overridePort string) {
 		}
 	})
 
-	// Routes
+	// Public routes
 	e.GET("/", func(c echo.Context) error {
 		return c.JSON(200, map[string]string{
 			"message": "Baby Tracker API",
@@ -89,18 +102,39 @@ func runServer(overridePort string) {
 		})
 	})
 
-	// API routes group
-	// api := e.Group("/api")
+	// Auth routes (public)
+	auth := e.Group("/api/auth")
+	auth.POST("/login", handlers.Login)
+	auth.POST("/logout", handlers.Logout)
+	auth.GET("/check", handlers.CheckAuth)
+	auth.GET("/me", handlers.GetCurrentUser)
 
-	// TODO: Add API routes here
-	// api.POST("/auth/login", handlers.Login)
-	// api.POST("/auth/logout", handlers.Logout)
-	// api.GET("/auth/me", handlers.GetCurrentUser)
+	// Protected API routes
+	api := e.Group("/api")
+	api.Use(authMiddleware.RequireAuthJSON())
+
+	// TODO: Add protected routes here
+	// api.GET("/activities", handlers.GetActivities)
+	// api.POST("/activities", handlers.CreateActivity)
+	// api.GET("/activities/:id", handlers.GetActivity)
+	// api.PUT("/activities/:id", handlers.UpdateActivity)
+	// api.DELETE("/activities/:id", handlers.DeleteActivity)
+
+	// Example protected route
+	api.GET("/test", func(c echo.Context) error {
+		userID := c.Get("user_id")
+		username := c.Get("username")
+		return c.JSON(200, map[string]interface{}{
+			"message":  "This is a protected route",
+			"user_id":  userID,
+			"username": username,
+		})
+	})
 
 	// Serve static files in production
 	if cfg.Env == "production" {
 		e.Static("/", "web/dist")
-		// Catch-all route for Vue Router
+		// Catch-all route for Vue Router (should be last)
 		e.GET("/*", func(c echo.Context) error {
 			return c.File("web/dist/index.html")
 		})
