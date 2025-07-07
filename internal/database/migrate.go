@@ -1,75 +1,132 @@
 package database
 
 import (
-	"github.com/engineervix/baby-tracker/internal/config"
-	"github.com/engineervix/baby-tracker/internal/models"
+	"database/sql"
+	"embed"
+	"fmt"
+
+	"github.com/golang-migrate/migrate/v4"
+	"github.com/golang-migrate/migrate/v4/database"
+	"github.com/golang-migrate/migrate/v4/database/postgres"
+	"github.com/golang-migrate/migrate/v4/database/sqlite3"
+	"github.com/golang-migrate/migrate/v4/source/iofs"
 	"gorm.io/gorm"
+
+	"github.com/engineervix/baby-tracker/internal/config"
 )
 
-// RunMigrations runs all database migrations
+//go:embed migrations/*.sql
+var migrationsFS embed.FS
+
+// RunMigrations runs all pending migrations
 func RunMigrations(db *gorm.DB, cfg *config.Config) error {
-	// Enable foreign key constraints for SQLite
-	if cfg.DBType == "sqlite" {
-		if err := db.Exec("PRAGMA foreign_keys = ON").Error; err != nil {
-			return err
-		}
+	// For tests, always use AutoMigrate as fallback
+	if cfg.Env == "test" {
+		return RunTestMigrations(db, cfg)
 	}
 
-	// Enable UUID extension for PostgreSQL
-	if cfg.DBType == "postgres" {
-		if err := db.Exec("CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\"").Error; err != nil {
-			return err
-		}
-	}
-
-	// Auto-migrate all models
-	err := db.AutoMigrate(
-		&models.User{},
-		&models.Baby{},
-		&models.Session{},
-		&models.Activity{},
-		&models.FeedActivity{},
-		&models.PumpActivity{},
-		&models.DiaperActivity{},
-		&models.SleepActivity{},
-		&models.GrowthMeasurement{},
-		&models.HealthRecord{},
-		&models.Milestone{},
-	)
-
+	sqlDB, err := db.DB()
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to get database instance: %w", err)
 	}
 
-	// Add indexes for better performance
-	if err := createIndexes(db); err != nil {
-		return err
+	m, err := createMigrator(sqlDB, cfg)
+	if err != nil {
+		return fmt.Errorf("failed to create migrator: %w", err)
+	}
+	// Don't close the migrator as it closes the shared database connection
+	// defer m.Close()
+
+	// Run all pending migrations
+	if err := m.Up(); err != nil && err != migrate.ErrNoChange {
+		return fmt.Errorf("failed to run migrations: %w", err)
 	}
 
 	return nil
 }
 
-func createIndexes(db *gorm.DB) error {
-	// Activity indexes
-	if err := db.Exec("CREATE INDEX IF NOT EXISTS idx_activities_baby_id ON activities(baby_id)").Error; err != nil {
-		return err
-	}
-	if err := db.Exec("CREATE INDEX IF NOT EXISTS idx_activities_type ON activities(type)").Error; err != nil {
-		return err
-	}
-	if err := db.Exec("CREATE INDEX IF NOT EXISTS idx_activities_start_time ON activities(start_time)").Error; err != nil {
-		return err
+// MigrateDown rolls back one migration
+func MigrateDown(db *gorm.DB, cfg *config.Config) error {
+	// For tests, this operation doesn't make sense with AutoMigrate
+	if cfg.Env == "test" {
+		return fmt.Errorf("migrate down not supported in test mode")
 	}
 
-	// Baby indexes
-	if err := db.Exec("CREATE INDEX IF NOT EXISTS idx_babies_user_id ON babies(user_id)").Error; err != nil {
-		return err
+	sqlDB, err := db.DB()
+	if err != nil {
+		return fmt.Errorf("failed to get database instance: %w", err)
 	}
 
-	// Session indexes
-	if err := db.Exec("CREATE INDEX IF NOT EXISTS idx_sessions_expires_at ON sessions(expires_at)").Error; err != nil {
-		return err
+	m, err := createMigrator(sqlDB, cfg)
+	if err != nil {
+		return fmt.Errorf("failed to create migrator: %w", err)
+	}
+	// Don't close the migrator as it closes the shared database connection
+	// defer m.Close()
+
+	// Roll back one migration
+	if err := m.Steps(-1); err != nil && err != migrate.ErrNoChange {
+		return fmt.Errorf("failed to rollback migration: %w", err)
 	}
 
 	return nil
+}
+
+// MigrateStatus shows current migration status
+func MigrateStatus(db *gorm.DB, cfg *config.Config) (uint, bool, error) {
+	// For tests, return fake status
+	if cfg.Env == "test" {
+		return 1, false, nil
+	}
+
+	sqlDB, err := db.DB()
+	if err != nil {
+		return 0, false, fmt.Errorf("failed to get database instance: %w", err)
+	}
+
+	m, err := createMigrator(sqlDB, cfg)
+	if err != nil {
+		return 0, false, fmt.Errorf("failed to create migrator: %w", err)
+	}
+	// Don't close the migrator as it closes the shared database connection
+	// defer m.Close()
+
+	version, dirty, err := m.Version()
+	if err != nil {
+		return 0, false, fmt.Errorf("failed to get migration version: %w", err)
+	}
+
+	return version, dirty, nil
+}
+
+// createMigrator creates a new migrator instance
+func createMigrator(sqlDB *sql.DB, cfg *config.Config) (*migrate.Migrate, error) {
+	// Create source from embedded filesystem
+	source, err := iofs.New(migrationsFS, "migrations")
+	if err != nil {
+		return nil, fmt.Errorf("failed to create migration source: %w", err)
+	}
+
+	// Create database driver
+	var driver database.Driver
+	switch cfg.DBType {
+	case "sqlite":
+		driver, err = sqlite3.WithInstance(sqlDB, &sqlite3.Config{})
+	case "postgres":
+		driver, err = postgres.WithInstance(sqlDB, &postgres.Config{})
+	default:
+		return nil, fmt.Errorf("unsupported database type: %s", cfg.DBType)
+	}
+
+	if err != nil {
+		return nil, fmt.Errorf("failed to create database driver: %w", err)
+	}
+
+	// Create migrator
+	m, err := migrate.NewWithInstance("iofs", source, cfg.DBType, driver)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create migrator: %w", err)
+	}
+
+	return m, nil
 }

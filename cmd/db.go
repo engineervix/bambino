@@ -35,10 +35,30 @@ var migrateCmd = &cobra.Command{
 	},
 }
 
+var migrateDownCmd = &cobra.Command{
+	Use:   "migrate-down",
+	Short: "Rollback one migration",
+	Long:  `Rolls back the most recent migration.`,
+	Run: func(cmd *cobra.Command, args []string) {
+		rollbackMigration()
+	},
+}
+
+var migrateStatusCmd = &cobra.Command{
+	Use:   "migrate-status",
+	Short: "Show migration status",
+	Long:  `Shows current migration version and status.`,
+	Run: func(cmd *cobra.Command, args []string) {
+		showMigrationStatus()
+	},
+}
+
 func init() {
 	rootCmd.AddCommand(dbCmd)
 	dbCmd.AddCommand(testDbCmd)
 	dbCmd.AddCommand(migrateCmd)
+	dbCmd.AddCommand(migrateDownCmd)
+	dbCmd.AddCommand(migrateStatusCmd)
 }
 
 func testDatabaseConnection() {
@@ -88,9 +108,9 @@ func testDatabaseConnection() {
 	// Show table information
 	var tables []string
 	if cfg.DBType == "sqlite" {
-		db.Raw("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'").Pluck("name", &tables)
+		db.Raw("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' AND name != 'schema_migrations'").Pluck("name", &tables)
 	} else {
-		db.Raw("SELECT table_name FROM information_schema.tables WHERE table_schema = 'public'").Pluck("table_name", &tables)
+		db.Raw("SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' AND table_name != 'schema_migrations'").Pluck("table_name", &tables)
 	}
 
 	if len(tables) > 0 {
@@ -131,4 +151,71 @@ func runMigrations() {
 	}
 
 	fmt.Println("✅ Migrations completed successfully!")
+}
+
+func rollbackMigration() {
+	// Load .env file
+	if err := godotenv.Load(); err != nil {
+		log.Println("No .env file found")
+	}
+
+	// Load configuration
+	cfg := config.Load()
+
+	// Validate configuration
+	if err := cfg.Validate(); err != nil {
+		log.Fatalf("Configuration error: %v", err)
+	}
+
+	// Connect to database
+	db, err := database.Connect(cfg)
+	if err != nil {
+		log.Fatalf("Failed to connect to database: %v", err)
+	}
+
+	fmt.Println("Rolling back migration...")
+
+	// Rollback migration
+	if err := database.MigrateDown(db, cfg); err != nil {
+		log.Fatalf("❌ Failed to rollback migration: %v", err)
+	}
+
+	fmt.Println("✅ Migration rolled back successfully!")
+}
+
+func showMigrationStatus() {
+	// Load .env file
+	if err := godotenv.Load(); err != nil {
+		log.Println("No .env file found")
+	}
+
+	// Load configuration
+	cfg := config.Load()
+
+	// Validate configuration
+	if err := cfg.Validate(); err != nil {
+		log.Fatalf("Configuration error: %v", err)
+	}
+
+	// Connect to database
+	db, err := database.Connect(cfg)
+	if err != nil {
+		log.Fatalf("Failed to connect to database: %v", err)
+	}
+
+	// Get migration status
+	version, dirty, err := database.MigrateStatus(db, cfg)
+	if err != nil {
+		log.Fatalf("❌ Failed to get migration status: %v", err)
+	}
+
+	fmt.Printf("Migration Status:\n")
+	fmt.Printf("  Current Version: %d\n", version)
+	fmt.Printf("  Dirty: %t\n", dirty)
+
+	if dirty {
+		fmt.Println("⚠️  Warning: Database is in dirty state. Manual intervention may be required.")
+	} else {
+		fmt.Println("✅ Database is clean")
+	}
 }
