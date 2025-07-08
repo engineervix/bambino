@@ -23,11 +23,12 @@
     <!-- Activity cards -->
     <v-container>
       <v-row>
-        <!-- Main activity types -->
+        <!-- Main activity types - 2 columns on larger screens -->
         <v-col 
           v-for="activity in mainActivities" 
           :key="activity.id"
           cols="12"
+          sm="6"
           class="py-2"
         >
           <activity-card
@@ -51,15 +52,12 @@
               </v-expansion-panel-title>
               <v-expansion-panel-text>
                 <v-list>
-                  <v-list-item
-                    v-for="type in growthTypes"
-                    :key="type.id"
-                    @click="handleQuickAdd({ id: 'growth', subType: type.id })"
-                  >
+                  <v-list-item @click="handleQuickAdd({ id: 'growth' })">
                     <template v-slot:prepend>
-                      <v-icon>{{ type.icon }}</v-icon>
+                      <v-icon>mdi-human-male-height</v-icon>
                     </template>
-                    <v-list-item-title>{{ type.title }}</v-list-item-title>
+                    <v-list-item-title>Record Measurements</v-list-item-title>
+                    <v-list-item-subtitle>Weight, height, head circumference</v-list-item-subtitle>
                   </v-list-item>
                 </v-list>
               </v-expansion-panel-text>
@@ -73,15 +71,28 @@
               </v-expansion-panel-title>
               <v-expansion-panel-text>
                 <v-list>
-                  <v-list-item
-                    v-for="type in healthTypes"
-                    :key="type.id"
-                    @click="handleQuickAdd({ id: 'health', subType: type.id })"
-                  >
+                  <v-list-item @click="handleQuickAdd({ id: 'health', subType: 'checkup' })">
                     <template v-slot:prepend>
-                      <v-icon>{{ type.icon }}</v-icon>
+                      <v-icon>mdi-stethoscope</v-icon>
                     </template>
-                    <v-list-item-title>{{ type.title }}</v-list-item-title>
+                    <v-list-item-title>Medical Checkup</v-list-item-title>
+                    <v-list-item-subtitle>Doctor visit, routine checkup</v-list-item-subtitle>
+                  </v-list-item>
+                  
+                  <v-list-item @click="handleQuickAdd({ id: 'health', subType: 'vaccine' })">
+                    <template v-slot:prepend>
+                      <v-icon>mdi-needle</v-icon>
+                    </template>
+                    <v-list-item-title>Vaccination</v-list-item-title>
+                    <v-list-item-subtitle>Record vaccines received</v-list-item-subtitle>
+                  </v-list-item>
+                  
+                  <v-list-item @click="handleQuickAdd({ id: 'health', subType: 'illness' })">
+                    <template v-slot:prepend>
+                      <v-icon>mdi-thermometer</v-icon>
+                    </template>
+                    <v-list-item-title>Illness</v-list-item-title>
+                    <v-list-item-subtitle>Symptoms, treatment</v-list-item-subtitle>
                   </v-list-item>
                 </v-list>
               </v-expansion-panel-text>
@@ -179,25 +190,51 @@ const currentFormComponent = computed(() => {
   return formComponents[currentActivity.value.id] || null
 })
 
-// Main activities (cards)
+// Main activities (cards) - This was the issue!
 const mainActivities = computed(() => {
-  return activityStore.activityTypes.filter(a => 
-    ['feed', 'pump', 'diaper', 'sleep', 'milestone'].includes(a.id)
-  )
+  return [
+    {
+      id: 'feed',
+      title: 'Feed',
+      description: 'Track a feeding session',
+      icon: 'mdi-bottle-baby',
+      color: 'feed',
+      hasTimer: true
+    },
+    {
+      id: 'pump',
+      title: 'Pump',
+      description: 'Track a pumping session',
+      icon: 'mdi-mother-nurse',
+      color: 'pump',
+      hasTimer: true
+    },
+    {
+      id: 'diaper',
+      title: 'Diaper',
+      description: 'Track a diaper change',
+      icon: 'mdi-baby',
+      color: 'diaper',
+      hasTimer: false
+    },
+    {
+      id: 'sleep',
+      title: 'Sleep',
+      description: 'Track a sleep session',
+      icon: 'mdi-sleep',
+      color: 'sleep',
+      hasTimer: true
+    },
+    {
+      id: 'milestone',
+      title: 'Baby Firsts',
+      description: 'Track memorable moments',
+      icon: 'mdi-party-popper',
+      color: 'milestone',
+      hasTimer: false
+    }
+  ]
 })
-
-// Growth types
-const growthTypes = [
-  { id: 'weight', title: 'Weight', icon: 'mdi-scale' },
-  { id: 'height', title: 'Height', icon: 'mdi-human-male-height-variant' },
-  { id: 'head', title: 'Head Size', icon: 'mdi-head' }
-]
-
-// Health types
-const healthTypes = [
-  { id: 'medical', title: 'Medical', icon: 'mdi-doctor' },
-  { id: 'vaccine', title: 'Vaccine', icon: 'mdi-needle' }
-]
 
 // Handlers
 function handleActivityClick(activity) {
@@ -206,9 +243,9 @@ function handleActivityClick(activity) {
 }
 
 function handleQuickAdd(activity) {
-  // Find the full activity config from store
-  const fullActivity = activityStore.activityTypes.find(a => a.id === activity.id)
-  currentActivity.value = fullActivity || activity
+  // Find the full activity config from store or use the passed activity
+  const fullActivity = activityStore.activityTypes.find(a => a.id === activity.id) || activity
+  currentActivity.value = fullActivity
   showQuickAdd.value = true
 }
 
