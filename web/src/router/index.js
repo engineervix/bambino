@@ -55,6 +55,8 @@ router.beforeEach(async (to, from, next) => {
   } else if (to.path === '/login' && isAuthenticated) {
     next('/')
   } else {
+    // Load saved baby selection
+    authStore.loadSelectedBaby()
     next()
   }
 })

@@ -2,14 +2,21 @@
   <v-container class="pa-0">
     <!-- Header with baby info -->
     <v-sheet class="pa-4 mb-4" color="surface">
-      <div class="d-flex align-center">
+      <div v-if="currentBaby" class="d-flex align-center">
         <v-avatar size="56" class="mr-3">
           <v-icon size="large">mdi-baby-face</v-icon>
         </v-avatar>
         <div>
-          <h1 class="text-h5">Baby</h1>
-          <p class="text-body-2 text-grey">{{ currentDate }}</p>
+          <h1 class="text-h5">{{ currentBaby.name }}</h1>
+          <p class="text-body-2 text-grey">{{ currentBaby.age_display }} • {{ currentDate }}</p>
         </div>
+      </div>
+      <div v-else class="text-center py-4">
+        <v-icon size="48" class="mb-2 text-grey">mdi-baby-face-outline</v-icon>
+        <p class="text-body-1 text-grey">No baby profile found</p>
+        <v-btn color="primary" variant="tonal" size="small" to="/account">
+          Create Baby Profile
+        </v-btn>
       </div>
     </v-sheet>
 
@@ -128,6 +135,8 @@
 import { ref, computed, onMounted, markRaw } from 'vue'
 import { format } from 'date-fns'
 import { useActivityStore } from '@/stores/activity'
+import { useAuthStore } from '@/stores/auth'
+import { storeToRefs } from 'pinia'
 import ActivityCard from '@/components/activity/ActivityCard.vue'
 
 // Form components
@@ -151,6 +160,8 @@ const formComponents = {
 }
 
 const activityStore = useActivityStore()
+const authStore = useAuthStore()
+const { currentBaby } = storeToRefs(authStore)
 
 // State
 const showQuickAdd = ref(false)
