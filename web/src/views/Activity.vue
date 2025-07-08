@@ -136,7 +136,7 @@
       v-model="showSuccess"
       color="success"
       :timeout="3000"
-      location="top"
+      location="bottom"
     >
       <v-icon start>mdi-check-circle</v-icon>
       Activity saved successfully!

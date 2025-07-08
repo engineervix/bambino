@@ -19,7 +19,7 @@
             rounded="xl"
           >
             <template #prepend>
-              <v-icon>{{ item.icon }}</v-icon>
+              <v-icon>{{ activeTab === item.value ? item.iconActive : item.iconInactive }}</v-icon>
             </template>
             <v-list-item-title>{{ item.label }}</v-list-item-title>
           </v-list-item>
@@ -36,24 +36,14 @@
       grow
       bg-color="surface"
     >
-      <v-btn value="activity" to="/">
-        <v-icon>mdi-star-four-points</v-icon>
-        <span>Activity</span>
-      </v-btn>
-
-      <v-btn value="history" to="/history">
-        <v-icon>mdi-calendar</v-icon>
-        <span>History</span>
-      </v-btn>
-
-      <v-btn value="trends" to="/trends">
-        <v-icon>mdi-chart-line</v-icon>
-        <span>Trends</span>
-      </v-btn>
-
-      <v-btn value="account" to="/account">
-        <v-icon>mdi-account</v-icon>
-        <span>Account</span>
+      <v-btn
+        v-for="item in navItems"
+        :key="'bottom-' + item.value"
+        :value="item.value"
+        :to="item.to"
+      >
+        <v-icon>{{ activeTab === item.value ? item.iconActive : item.iconInactive }}</v-icon>
+        <span>{{ item.label }}</span>
       </v-btn>
     </v-bottom-navigation>
   </v-app>
@@ -81,10 +71,34 @@ const showBottomNav = computed(() => isAuthenticated.value && !isLoginPage.value
 const showDrawer = computed(() => isAuthenticated.value && !isLoginPage.value && display.mdAndUp.value)
 
 const navItems = [
-  { value: 'activity', to: '/', icon: 'mdi-star-four-points', label: 'Activity' },
-  { value: 'history', to: '/history', icon: 'mdi-calendar', label: 'History' },
-  { value: 'trends', to: '/trends', icon: 'mdi-chart-line', label: 'Trends' },
-  { value: 'account', to: '/account', icon: 'mdi-account', label: 'Account' }
+  {
+    value: 'activity',
+    to: '/',
+    iconActive: 'mdi-star-four-points',
+    iconInactive: 'mdi-star-four-points-outline',
+    label: 'Activity'
+  },
+  {
+    value: 'history',
+    to: '/history',
+    iconActive: 'mdi-calendar',
+    iconInactive: 'mdi-calendar-outline',
+    label: 'History'
+  },
+  {
+    value: 'trends',
+    to: '/trends',
+    iconActive: 'mdi-chart-line',
+    iconInactive: 'mdi-chart-line', // no outline variant
+    label: 'Trends'
+  },
+  {
+    value: 'account',
+    to: '/account',
+    iconActive: 'mdi-account',
+    iconInactive: 'mdi-account-outline',
+    label: 'Account'
+  }
 ]
 
 // Initialize auth state on app load
