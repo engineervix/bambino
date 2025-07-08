@@ -104,7 +104,7 @@
       block
     >
       <v-icon start>mdi-chart-line</v-icon>
-      Save Measurements
+      {{ editMode ? 'Update Measurements' : 'Save Measurements' }}
     </v-btn>
   </v-form>
 </template>
@@ -113,8 +113,19 @@
 import { ref, computed, watch } from 'vue'
 import { useActivityStore } from '@/stores/activity'
 import { useErrorHandling } from '@/composables/useErrorHandling'
-import { getCurrentDate } from '@/utils/datetime'
+import { getCurrentDate, getDateString } from '@/utils/datetime'
 import { validationRules, validateAtLeastOne } from '@/utils/validation'
+
+const props = defineProps({
+  activity: {
+    type: Object,
+    default: null
+  },
+  editMode: {
+    type: Boolean,
+    default: false
+  }
+})
 
 const emit = defineEmits(['success', 'cancel'])
 
@@ -127,13 +138,30 @@ const { error: formError, loading, handleError, clearError: clearFormError, with
 // Form state
 const form = ref(null)
 const showMeasurementError = ref(false)
-const formData = ref({
-  date: getCurrentDate(),
-  weight_kg: null,
-  height_cm: null,
-  head_circumference_cm: null,
-  notes: ''
-})
+
+// Initialize form data from props or defaults
+const initializeFormData = () => {
+  if (props.editMode && props.activity) {
+    const activity = props.activity
+    const startTime = new Date(activity.start_time)
+    return {
+      date: getDateString(startTime),
+      weight_kg: activity.growth_data?.weight_kg || null,
+      height_cm: activity.growth_data?.height_cm || null,
+      head_circumference_cm: activity.growth_data?.head_circumference_cm || null,
+      notes: activity.notes || ''
+    }
+  }
+  return {
+    date: getCurrentDate(),
+    weight_kg: null,
+    height_cm: null,
+    head_circumference_cm: null,
+    notes: ''
+  }
+}
+
+const formData = ref(initializeFormData())
 
 // Validation rules
 const rules = {
@@ -155,6 +183,13 @@ watch(() => hasAnyMeasurement.value, (hasValue) => {
     showMeasurementError.value = false
   }
 })
+
+// Watch for prop changes to reinitialize form data
+watch(() => props.activity, () => {
+  if (props.editMode && props.activity) {
+    formData.value = initializeFormData()
+  }
+}, { deep: true })
 
 // Submit form
 async function handleSubmit() {
@@ -209,7 +244,15 @@ async function handleSubmit() {
       activityData.growth_data.head_circumference_cm = formData.value.head_circumference_cm
     }
     
-    const response = await activityStore.createActivity(activityData)
+    let response
+    if (props.editMode && props.activity) {
+      // Update existing activity
+      response = await activityStore.updateActivity(props.activity.id, activityData)
+    } else {
+      // Create new activity
+      response = await activityStore.createActivity(activityData)
+    }
+    
     if (!response.success) {
       throw new Error(response.error)
     }

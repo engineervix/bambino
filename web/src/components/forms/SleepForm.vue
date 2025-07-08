@@ -143,7 +143,7 @@
     <!-- Actions -->
     <div class="d-flex gap-2">
       <v-btn
-        v-if="!useTimer && hasTimer"
+        v-if="!useTimer && hasTimer && !editMode"
         variant="outlined"
         color="sleep"
         @click="startTimer"
@@ -175,24 +175,32 @@
         :disabled="loading"
         block
       >
-        Save
+        {{ editMode ? 'Update Sleep' : 'Save' }}
       </v-btn>
     </div>
   </v-form>
 </template>
 
 <script setup>
-import { ref, computed, onUnmounted, watch } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useTimerStore } from '@/stores/timer'
 import { useActivityStore } from '@/stores/activity'
 import { useErrorHandling } from '@/composables/useErrorHandling'
-import { combineDateAndTime, getCurrentDate, getCurrentTime } from '@/utils/datetime'
+import { combineDateAndTime, getCurrentDate, getCurrentTime, getDateString, getTimeString } from '@/utils/datetime'
 import { validationRules, validateDateTime } from '@/utils/validation'
 
 const props = defineProps({
   hasTimer: {
     type: Boolean,
     default: true
+  },
+  activity: {
+    type: Object,
+    default: null
+  },
+  editMode: {
+    type: Boolean,
+    default: false
   }
 })
 
@@ -210,15 +218,41 @@ const form = ref(null)
 const useTimer = ref(false)
 const timerInterval = ref(null)
 const showEndTime = ref(false)
-const formData = ref({
-  startDate: getCurrentDate(),
-  startTime: getCurrentTime(),
-  endDate: getCurrentDate(),
-  endTime: null,
-  location: 'crib',
-  quality: 3,
-  notes: ''
-})
+
+// Initialize form data from props or defaults
+const initializeFormData = () => {
+  if (props.editMode && props.activity) {
+    const activity = props.activity
+    const startTime = new Date(activity.start_time)
+    const endTime = activity.end_time ? new Date(activity.end_time) : null
+    
+    return {
+      startDate: getDateString(startTime),
+      startTime: getTimeString(startTime),
+      endDate: endTime ? getDateString(endTime) : getCurrentDate(),
+      endTime: endTime ? getTimeString(endTime) : null,
+      location: activity.sleep_data?.location || 'crib',
+      quality: activity.sleep_data?.quality || 3,
+      notes: activity.notes || ''
+    }
+  }
+  return {
+    startDate: getCurrentDate(),
+    startTime: getCurrentTime(),
+    endDate: getCurrentDate(),
+    endTime: null,
+    location: 'crib',
+    quality: 3,
+    notes: ''
+  }
+}
+
+const formData = ref(initializeFormData())
+
+// Check if we should show end time initially (for edit mode)
+if (props.editMode && props.activity && props.activity.end_time) {
+  showEndTime.value = true
+}
 
 // Validation rules
 const rules = {
@@ -252,18 +286,28 @@ const timerDisplay = computed(() => {
   return timerStore.getFormattedDuration('sleep')
 })
 
-// Watch for active timer changes
+// Watch for active timer changes (only if not in edit mode)
 watch(() => timerStore.hasActiveTimer('sleep'), (hasTimer) => {
-  useTimer.value = hasTimer
-  if (hasTimer) {
-    startTimerDisplay()
-  } else {
-    stopTimerDisplay()
+  if (!props.editMode) {
+    useTimer.value = hasTimer
+    if (hasTimer) {
+      startTimerDisplay()
+    } else {
+      stopTimerDisplay()
+    }
   }
 }, { immediate: true })
 
 onUnmounted(() => {
   stopTimerDisplay()
+})
+
+// Initialize on mount
+onMounted(() => {
+  // Don't show timer in edit mode
+  if (props.editMode) {
+    useTimer.value = false
+  }
 })
 
 // Timer display management
@@ -426,7 +470,15 @@ async function handleSubmit() {
       }
     }
     
-    const response = await activityStore.createActivity(activityData)
+    let response
+    if (props.editMode && props.activity) {
+      // Update existing activity
+      response = await activityStore.updateActivity(props.activity.id, activityData)
+    } else {
+      // Create new activity
+      response = await activityStore.createActivity(activityData)
+    }
+    
     if (!response.success) {
       throw new Error(response.error)
     }
@@ -438,4 +490,13 @@ async function handleSubmit() {
     emit('success', result.data)
   }
 }
+
+// Watch for prop changes to reinitialize form data
+watch(() => props.activity, () => {
+  if (props.editMode && props.activity) {
+    formData.value = initializeFormData()
+    // Update showEndTime based on whether activity has end time
+    showEndTime.value = !!(props.activity.end_time)
+  }
+}, { deep: true })
 </script>

@@ -263,6 +263,47 @@
       </v-card>
     </v-dialog>
 
+    <!-- Edit Activity Dialog -->
+    <v-dialog v-model="showEditDialog" max-width="500" persistent scrollable>
+      <v-card v-if="activityToEdit">
+        <v-card-title class="d-flex align-center">
+          <v-icon :color="getActivityColor(activityToEdit.type)" class="mr-2">
+            {{ getActivityIcon(activityToEdit.type) }}
+          </v-icon>
+          <span>Edit {{ getActivityTitle(activityToEdit.type) }}</span>
+          <v-spacer></v-spacer>
+          <v-btn icon variant="text" @click="closeEditDialog">
+            <v-icon>mdi-close</v-icon>
+          </v-btn>
+        </v-card-title>
+        
+        <v-divider></v-divider>
+        
+        <v-card-text class="pa-4">
+          <!-- Show warning for timer activities -->
+          <v-alert
+            v-if="isTimerActivity(activityToEdit) && !activityToEdit.end_time"
+            type="warning"
+            variant="tonal"
+            class="mb-4"
+          >
+            This activity is currently running. You can only edit notes and some details.
+          </v-alert>
+
+          <!-- Dynamic edit form component -->
+          <component
+            v-if="currentEditFormComponent"
+            :is="currentEditFormComponent"
+            :activity="activityToEdit"
+            :edit-mode="true"
+            :has-timer="getActivityTypeConfig(activityToEdit.type)?.hasTimer"
+            @success="handleEditSuccess"
+            @cancel="closeEditDialog"
+          />
+        </v-card-text>
+      </v-card>
+    </v-dialog>
+
     <!-- Success Snackbar -->
     <v-snackbar
       v-model="showSuccess"
@@ -277,14 +318,34 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, watch, markRaw } from 'vue'
 import { useActivityStore } from '@/stores/activity'
 import { storeToRefs } from 'pinia'
 import { formatActivityDate, formatTimeAgo } from '@/utils/datetime'
 import { format, subDays, startOfWeek, startOfMonth } from 'date-fns'
 
-// Import the activity details component (we'll create this next)
+// Import the activity details component
 import ActivityDetails from '@/components/activity/ActivityDetails.vue'
+
+// Import form components for editing
+import FeedForm from '@/components/forms/FeedForm.vue'
+import PumpForm from '@/components/forms/PumpForm.vue'
+import DiaperForm from '@/components/forms/DiaperForm.vue'
+import SleepForm from '@/components/forms/SleepForm.vue'
+import GrowthForm from '@/components/forms/GrowthForm.vue'
+import HealthForm from '@/components/forms/HealthForm.vue'
+import MilestoneForm from '@/components/forms/MilestoneForm.vue'
+
+// Mark components as raw to avoid reactivity overhead
+const editFormComponents = {
+  feed: markRaw(FeedForm),
+  pump: markRaw(PumpForm),
+  diaper: markRaw(DiaperForm),
+  sleep: markRaw(SleepForm),
+  growth: markRaw(GrowthForm),
+  health: markRaw(HealthForm),
+  milestone: markRaw(MilestoneForm)
+}
 
 const activityStore = useActivityStore()
 const { activities, loading, pagination, activityTypes } = storeToRefs(activityStore)
@@ -293,10 +354,12 @@ const { activities, loading, pagination, activityTypes } = storeToRefs(activityS
 const showFilters = ref(false)
 const showDeleteDialog = ref(false)
 const showDetailDialog = ref(false)
+const showEditDialog = ref(false)
 const showSuccess = ref(false)
 const successMessage = ref('')
 const activityToDelete = ref(null)
 const selectedActivity = ref(null)
+const activityToEdit = ref(null)
 
 // Filters
 const filters = ref({
@@ -316,6 +379,12 @@ const activityTypeOptions = computed(() => {
 // Check if any filters are active
 const hasActiveFilters = computed(() => {
   return filters.value.startDate || filters.value.endDate || filters.value.type
+})
+
+// Current edit form component
+const currentEditFormComponent = computed(() => {
+  if (!activityToEdit.value) return null
+  return editFormComponents[activityToEdit.value.type] || null
 })
 
 // Date presets for quick filtering
@@ -378,6 +447,15 @@ function getActivityTitle(type) {
   return config?.title || type
 }
 
+function getActivityTypeConfig(type) {
+  return activityTypes.value.find(at => at.id === type)
+}
+
+function isTimerActivity(activity) {
+  const config = getActivityTypeConfig(activity.type)
+  return config?.hasTimer || false
+}
+
 function applyDatePreset(preset) {
   const dates = preset.getDates()
   filters.value.startDate = dates.startDate
@@ -420,11 +498,7 @@ async function loadMore() {
   if (filters.value.endDate) params.end_date = filters.value.endDate
   if (filters.value.type) params.type = filters.value.type
   
-  const result = await activityStore.fetchActivities(params)
-  if (result.success) {
-    // Append new activities to existing list
-    activities.value.push(...result.data.activities)
-  }
+  await activityStore.fetchActivities(params)
 }
 
 function viewActivity(activity) {
@@ -433,13 +507,33 @@ function viewActivity(activity) {
 }
 
 function editActivity(activity) {
-  // TODO: Implement edit functionality
-  // For now, just close dialogs and show a message
+  // Close any open dialogs
   showDetailDialog.value = false
   showDeleteDialog.value = false
   
-  successMessage.value = 'Edit functionality coming soon!'
+  // Set the activity to edit
+  activityToEdit.value = { ...activity } // Clone to avoid mutations
+  showEditDialog.value = true
+}
+
+function closeEditDialog() {
+  showEditDialog.value = false
+  // Clear after animation
+  setTimeout(() => {
+    activityToEdit.value = null
+  }, 300)
+}
+
+async function handleEditSuccess(data) {
+  // Close edit dialog
+  closeEditDialog()
+  
+  // Show success message
+  successMessage.value = 'Activity updated successfully'
   showSuccess.value = true
+  
+  // Refresh the activities list to show updated data
+  await applyFilters()
 }
 
 function confirmDelete(activity) {

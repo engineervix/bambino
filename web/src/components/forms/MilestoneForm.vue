@@ -74,17 +74,28 @@
       class="text-none"
     >
       <v-icon start>mdi-party-popper</v-icon>
-      Save Milestone
+      {{ editMode ? 'Update Milestone' : 'Save Milestone' }}
     </v-btn>
   </v-form>
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
 import { useActivityStore } from '@/stores/activity'
 import { useErrorHandling } from '@/composables/useErrorHandling'
-import { getCurrentDate } from '@/utils/datetime'
+import { getCurrentDate, getDateString } from '@/utils/datetime'
 import { validationRules } from '@/utils/validation'
+
+const props = defineProps({
+  activity: {
+    type: Object,
+    default: null
+  },
+  editMode: {
+    type: Boolean,
+    default: false
+  }
+})
 
 const emit = defineEmits(['success', 'cancel'])
 
@@ -96,11 +107,26 @@ const { error: formError, loading, handleError, clearError: clearFormError, with
 
 // Form state
 const form = ref(null)
-const formData = ref({
-  date: getCurrentDate(),
-  milestone_type: '',
-  description: ''
-})
+
+// Initialize form data from props or defaults
+const initializeFormData = () => {
+  if (props.editMode && props.activity) {
+    const activity = props.activity
+    const startTime = new Date(activity.start_time)
+    return {
+      date: getDateString(startTime),
+      milestone_type: activity.milestone_data?.milestone_type || '',
+      description: activity.milestone_data?.description || ''
+    }
+  }
+  return {
+    date: getCurrentDate(),
+    milestone_type: '',
+    description: ''
+  }
+}
+
+const formData = ref(initializeFormData())
 
 // Validation rules
 const rules = {
@@ -143,6 +169,13 @@ const milestoneTypes = [
   'First Toy Preference'
 ]
 
+// Watch for prop changes to reinitialize form data
+watch(() => props.activity, () => {
+  if (props.editMode && props.activity) {
+    formData.value = initializeFormData()
+  }
+}, { deep: true })
+
 // Submit form
 async function handleSubmit() {
   // Validate form
@@ -172,7 +205,15 @@ async function handleSubmit() {
       }
     }
     
-    const response = await activityStore.createActivity(activityData)
+    let response
+    if (props.editMode && props.activity) {
+      // Update existing activity
+      response = await activityStore.updateActivity(props.activity.id, activityData)
+    } else {
+      // Create new activity
+      response = await activityStore.createActivity(activityData)
+    }
+    
     if (!response.success) {
       throw new Error(response.error)
     }

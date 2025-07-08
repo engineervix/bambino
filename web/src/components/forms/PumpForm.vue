@@ -122,7 +122,7 @@
     <!-- Actions -->
     <div class="d-flex gap-2">
       <v-btn
-        v-if="!useTimer && hasTimer"
+        v-if="!useTimer && hasTimer && !editMode"
         variant="outlined"
         color="pump"
         @click="startTimer"
@@ -154,24 +154,32 @@
         :disabled="loading"
         block
       >
-        Save
+        {{ editMode ? 'Update Pump' : 'Save' }}
       </v-btn>
     </div>
   </v-form>
 </template>
 
 <script setup>
-import { ref, computed, onUnmounted, watch } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useTimerStore } from '@/stores/timer'
 import { useActivityStore } from '@/stores/activity'
 import { useErrorHandling } from '@/composables/useErrorHandling'
-import { combineDateAndTime, getCurrentDate, getCurrentTime } from '@/utils/datetime'
+import { combineDateAndTime, getCurrentDate, getCurrentTime, getDateString, getTimeString } from '@/utils/datetime'
 import { validationRules, validateDateTime } from '@/utils/validation'
 
 const props = defineProps({
   hasTimer: {
     type: Boolean,
     default: true
+  },
+  activity: {
+    type: Object,
+    default: null
+  },
+  editMode: {
+    type: Boolean,
+    default: false
   }
 })
 
@@ -188,14 +196,32 @@ const { error: formError, loading, handleError, clearError: clearFormError, with
 const form = ref(null)
 const useTimer = ref(false)
 const timerInterval = ref(null)
-const formData = ref({
-  breast: 'both',
-  date: getCurrentDate(),
-  time: getCurrentTime(),
-  amount_ml: null,
-  duration_minutes: null,
-  notes: ''
-})
+
+// Initialize form data from props or defaults
+const initializeFormData = () => {
+  if (props.editMode && props.activity) {
+    const activity = props.activity
+    const startTime = new Date(activity.start_time)
+    return {
+      breast: activity.pump_data?.breast || 'both',
+      date: getDateString(startTime),
+      time: getTimeString(startTime),
+      amount_ml: activity.pump_data?.amount_ml || null,
+      duration_minutes: activity.pump_data?.duration_minutes || null,
+      notes: activity.notes || ''
+    }
+  }
+  return {
+    breast: 'both',
+    date: getCurrentDate(),
+    time: getCurrentTime(),
+    amount_ml: null,
+    duration_minutes: null,
+    notes: ''
+  }
+}
+
+const formData = ref(initializeFormData())
 
 // Validation rules
 const rules = {
@@ -212,18 +238,28 @@ const timerDisplay = computed(() => {
   return timerStore.getFormattedDuration('pump')
 })
 
-// Watch for active timer changes
+// Watch for active timer changes (only if not in edit mode)
 watch(() => timerStore.hasActiveTimer('pump'), (hasTimer) => {
-  useTimer.value = hasTimer
-  if (hasTimer) {
-    startTimerDisplay()
-  } else {
-    stopTimerDisplay()
+  if (!props.editMode) {
+    useTimer.value = hasTimer
+    if (hasTimer) {
+      startTimerDisplay()
+    } else {
+      stopTimerDisplay()
+    }
   }
 }, { immediate: true })
 
 onUnmounted(() => {
   stopTimerDisplay()
+})
+
+// Initialize on mount
+onMounted(() => {
+  // Don't show timer in edit mode
+  if (props.editMode) {
+    useTimer.value = false
+  }
 })
 
 // Timer display management
@@ -345,7 +381,15 @@ async function handleSubmit() {
       activityData.end_time = new Date(activityDateTime.getTime() + formData.value.duration_minutes * 60000)
     }
     
-    const response = await activityStore.createActivity(activityData)
+    let response
+    if (props.editMode && props.activity) {
+      // Update existing activity
+      response = await activityStore.updateActivity(props.activity.id, activityData)
+    } else {
+      // Create new activity
+      response = await activityStore.createActivity(activityData)
+    }
+    
     if (!response.success) {
       throw new Error(response.error)
     }
@@ -357,4 +401,11 @@ async function handleSubmit() {
     emit('success', result.data)
   }
 }
+
+// Watch for prop changes to reinitialize form data
+watch(() => props.activity, () => {
+  if (props.editMode && props.activity) {
+    formData.value = initializeFormData()
+  }
+}, { deep: true })
 </script>

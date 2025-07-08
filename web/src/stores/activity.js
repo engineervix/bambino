@@ -7,7 +7,7 @@ export const useActivityStore = defineStore('activity', () => {
   const activities = ref([])
   const loading = ref(false)
   const error = ref(null)
-  const currentActivity = ref(null) // For edit operations
+  const currentActivity = ref(null)
   const pagination = ref({
     page: 1,
     pageSize: 20,
@@ -15,7 +15,7 @@ export const useActivityStore = defineStore('activity', () => {
     totalPages: 0
   })
 
-  // Activity types configuration (keep your existing config)
+  // Activity types configuration
   const activityTypes = ref([
     {
       id: 'feed',
@@ -25,10 +25,57 @@ export const useActivityStore = defineStore('activity', () => {
       color: 'feed',
       hasTimer: true
     },
-    // ... rest of your activity types
+    {
+      id: 'pump',
+      title: 'Pump',
+      description: 'Track a pumping session',
+      icon: 'mdi-mother-nurse',
+      color: 'pump',
+      hasTimer: true
+    },
+    {
+      id: 'diaper',
+      title: 'Diaper',
+      description: 'Track a diaper change',
+      icon: 'mdi-baby',
+      color: 'diaper',
+      hasTimer: false
+    },
+    {
+      id: 'sleep',
+      title: 'Sleep',
+      description: 'Track a sleep session',
+      icon: 'mdi-sleep',
+      color: 'sleep',
+      hasTimer: true
+    },
+    {
+      id: 'growth',
+      title: 'Growth',
+      description: 'Record measurements',
+      icon: 'mdi-human-male-height',
+      color: 'growth',
+      hasTimer: false
+    },
+    {
+      id: 'health',
+      title: 'Health',
+      description: 'Medical records & vaccines',
+      icon: 'mdi-medical-bag',
+      color: 'health',
+      hasTimer: false
+    },
+    {
+      id: 'milestone',
+      title: 'Milestone',
+      description: 'Track memorable moments',
+      icon: 'mdi-party-popper',
+      color: 'milestone',
+      hasTimer: false
+    }
   ])
 
-  // Enhanced Actions
+  // Actions
   async function createActivity(activityData) {
     loading.value = true
     error.value = null
@@ -54,7 +101,6 @@ export const useActivityStore = defineStore('activity', () => {
     }
   }
 
-  // NEW: Get single activity
   async function getActivity(id) {
     loading.value = true
     error.value = null
@@ -71,7 +117,6 @@ export const useActivityStore = defineStore('activity', () => {
     }
   }
 
-  // NEW: Update activity
   async function updateActivity(id, activityData) {
     loading.value = true
     error.value = null
@@ -95,7 +140,6 @@ export const useActivityStore = defineStore('activity', () => {
     }
   }
 
-  // NEW: Delete activity
   async function deleteActivity(id) {
     loading.value = true
     error.value = null
@@ -119,7 +163,6 @@ export const useActivityStore = defineStore('activity', () => {
     }
   }
 
-  // Enhanced fetch with better pagination support
   async function fetchActivities(params = {}) {
     loading.value = true
     error.value = null
@@ -127,7 +170,15 @@ export const useActivityStore = defineStore('activity', () => {
     try {
       const response = await apiClient.get('/activities', { params })
       
-      activities.value = response.data.activities
+      // Handle pagination properly
+      if (params.page > 1) {
+        // Append for pagination
+        activities.value.push(...response.data.activities)
+      } else {
+        // Replace for new queries
+        activities.value = response.data.activities
+      }
+      
       pagination.value = {
         page: response.data.page,
         pageSize: response.data.page_size,
@@ -144,7 +195,7 @@ export const useActivityStore = defineStore('activity', () => {
     }
   }
 
-  // Timer operations (keep your existing implementation)
+  // Timer operations
   async function startTimer(type, initialData = {}) {
     loading.value = true
     error.value = null
@@ -169,6 +220,13 @@ export const useActivityStore = defineStore('activity', () => {
     
     try {
       const response = await apiClient.put(`/activities/timer/${activityId}/stop`, additionalData)
+      
+      // Update activity in list if it exists
+      const index = activities.value.findIndex(a => a.id === activityId)
+      if (index !== -1) {
+        activities.value[index] = response.data
+      }
+      
       return { success: true, data: response.data }
     } catch (err) {
       error.value = err.message

@@ -52,6 +52,13 @@ const isLoginPage = computed(() => route.name === 'login')
 // Initialize auth state on app load
 onMounted(async () => {
   await authStore.initializeAuth()
+
+  // Initialize timers if authenticated
+  if (authStore.isAuthenticated) {
+    const { useTimerStore } = await import('@/stores/timer')
+    const timerStore = useTimerStore()
+    await timerStore.initializeTimers()
+  }
 })
 
 // Update active tab based on route

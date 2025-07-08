@@ -117,7 +117,7 @@
       :disabled="loading || (!formData.wet && !formData.dirty)"
       block
     >
-      Save
+      {{ editMode ? 'Update Diaper' : 'Save' }}
     </v-btn>
   </v-form>
 </template>
@@ -126,8 +126,19 @@
 import { ref, watch } from 'vue'
 import { useActivityStore } from '@/stores/activity'
 import { useErrorHandling } from '@/composables/useErrorHandling'
-import { combineDateAndTime, getCurrentDate, getCurrentTime } from '@/utils/datetime'
+import { combineDateAndTime, getCurrentDate, getCurrentTime, getDateString, getTimeString } from '@/utils/datetime'
 import { validationRules, validateDateTime } from '@/utils/validation'
+
+const props = defineProps({
+  activity: {
+    type: Object,
+    default: null
+  },
+  editMode: {
+    type: Boolean,
+    default: false
+  }
+})
 
 const emit = defineEmits(['success', 'cancel'])
 
@@ -140,15 +151,34 @@ const { error: formError, loading, handleError, clearError: clearFormError, with
 // Form state
 const form = ref(null)
 const showDiaperTypeError = ref(false)
-const formData = ref({
-  date: getCurrentDate(),
-  time: getCurrentTime(),
-  wet: false,
-  dirty: false,
-  color: null,
-  consistency: null,
-  notes: ''
-})
+
+// Initialize form data from props or defaults
+const initializeFormData = () => {
+  if (props.editMode && props.activity) {
+    const activity = props.activity
+    const startTime = new Date(activity.start_time)
+    return {
+      date: getDateString(startTime),
+      time: getTimeString(startTime),
+      wet: activity.diaper_data?.wet || false,
+      dirty: activity.diaper_data?.dirty || false,
+      color: activity.diaper_data?.color || null,
+      consistency: activity.diaper_data?.consistency || null,
+      notes: activity.notes || ''
+    }
+  }
+  return {
+    date: getCurrentDate(),
+    time: getCurrentTime(),
+    wet: false,
+    dirty: false,
+    color: null,
+    consistency: null,
+    notes: ''
+  }
+}
+
+const formData = ref(initializeFormData())
 
 // Validation rules
 const rules = {
@@ -187,6 +217,13 @@ watch([() => formData.value.wet, () => formData.value.dirty], () => {
     showDiaperTypeError.value = false
   }
 })
+
+// Watch for prop changes to reinitialize form data
+watch(() => props.activity, () => {
+  if (props.editMode && props.activity) {
+    formData.value = initializeFormData()
+  }
+}, { deep: true })
 
 // Submit form
 async function handleSubmit() {
@@ -238,7 +275,15 @@ async function handleSubmit() {
       activityData.diaper_data.consistency = formData.value.consistency
     }
     
-    const response = await activityStore.createActivity(activityData)
+    let response
+    if (props.editMode && props.activity) {
+      // Update existing activity
+      response = await activityStore.updateActivity(props.activity.id, activityData)
+    } else {
+      // Create new activity
+      response = await activityStore.createActivity(activityData)
+    }
+    
     if (!response.success) {
       throw new Error(response.error)
     }

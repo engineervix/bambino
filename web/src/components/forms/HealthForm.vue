@@ -122,7 +122,7 @@
       block
     >
       <v-icon start>{{ getRecordIcon() }}</v-icon>
-      Save Health Record
+      {{ editMode ? 'Update Health Record' : 'Save Health Record' }}
     </v-btn>
   </v-form>
 </template>
@@ -131,8 +131,19 @@
 import { ref, watch, computed } from 'vue'
 import { useActivityStore } from '@/stores/activity'
 import { useErrorHandling } from '@/composables/useErrorHandling'
-import { combineDateAndTime, getCurrentDate, getCurrentTime } from '@/utils/datetime'
+import { combineDateAndTime, getCurrentDate, getCurrentTime, getDateString, getTimeString } from '@/utils/datetime'
 import { validationRules, validateDateTime } from '@/utils/validation'
+
+const props = defineProps({
+  activity: {
+    type: Object,
+    default: null
+  },
+  editMode: {
+    type: Boolean,
+    default: false
+  }
+})
 
 const emit = defineEmits(['success', 'cancel'])
 
@@ -144,16 +155,36 @@ const { error: formError, loading, handleError, clearError: clearFormError, with
 
 // Form state
 const form = ref(null)
-const formData = ref({
-  record_type: 'checkup',
-  date: getCurrentDate(),
-  time: getCurrentTime(),
-  provider: '',
-  vaccine_name: '',
-  symptoms: '',
-  treatment: '',
-  notes: ''
-})
+
+// Initialize form data from props or defaults
+const initializeFormData = () => {
+  if (props.editMode && props.activity) {
+    const activity = props.activity
+    const startTime = new Date(activity.start_time)
+    return {
+      record_type: activity.health_data?.record_type || 'checkup',
+      date: getDateString(startTime),
+      time: getTimeString(startTime),
+      provider: activity.health_data?.provider || '',
+      vaccine_name: activity.health_data?.vaccine_name || '',
+      symptoms: activity.health_data?.symptoms || '',
+      treatment: activity.health_data?.treatment || '',
+      notes: activity.notes || ''
+    }
+  }
+  return {
+    record_type: 'checkup',
+    date: getCurrentDate(),
+    time: getCurrentTime(),
+    provider: '',
+    vaccine_name: '',
+    symptoms: '',
+    treatment: '',
+    notes: ''
+  }
+}
+
+const formData = ref(initializeFormData())
 
 // Validation rules
 const rules = {
@@ -193,6 +224,13 @@ watch(() => formData.value.record_type, (newType) => {
     formData.value.treatment = ''
   }
 })
+
+// Watch for prop changes to reinitialize form data
+watch(() => props.activity, () => {
+  if (props.editMode && props.activity) {
+    formData.value = initializeFormData()
+  }
+}, { deep: true })
 
 // Submit form
 async function handleSubmit() {
@@ -245,7 +283,15 @@ async function handleSubmit() {
       }
     }
     
-    const response = await activityStore.createActivity(activityData)
+    let response
+    if (props.editMode && props.activity) {
+      // Update existing activity
+      response = await activityStore.updateActivity(props.activity.id, activityData)
+    } else {
+      // Create new activity
+      response = await activityStore.createActivity(activityData)
+    }
+    
     if (!response.success) {
       throw new Error(response.error)
     }
