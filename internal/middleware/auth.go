@@ -55,7 +55,7 @@ func RequireAuthWithConfig(config AuthConfig) echo.MiddlewareFunc {
 			}
 
 			// Add user info to context for use in handlers
-			c.Set("user_id", userID)
+			c.Set("user_id", userID.String()) // Convert UUID to string
 			c.Set("username", username)
 
 			return next(c)

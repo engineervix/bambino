@@ -107,11 +107,18 @@ func runServer(overridePort string) {
 	auth.POST("/login", handlers.Login)
 	auth.POST("/logout", handlers.Logout)
 	auth.GET("/check", handlers.CheckAuth)
-	auth.GET("/me", handlers.GetCurrentUser)
+
+	// Auth routes (protected)
+	authProtected := e.Group("/api/auth")
+	authProtected.Use(authMiddleware.RequireAuthJSON())
+	authProtected.GET("/me", handlers.GetCurrentUser)
 
 	// Protected API routes
 	api := e.Group("/api")
 	api.Use(authMiddleware.RequireAuthJSON())
+
+	// Baby routes
+	api.GET("/babies", handlers.GetBabies)
 
 	// Activity routes
 	api.GET("/activities", handlers.GetActivities)
