@@ -21,7 +21,7 @@ export const useActivityStore = defineStore('activity', () => {
       id: 'feed',
       title: 'Feed',
       description: 'Track a feeding session',
-      icon: 'mdi-bottle-baby',
+      icon: 'mdi-baby-bottle',
       color: 'feed',
       hasTimer: true
     },
