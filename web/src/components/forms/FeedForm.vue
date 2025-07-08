@@ -5,18 +5,18 @@
       v-model="formData.feed_type"
       mandatory
       color="primary"
-      class="mb-4"
-      block
+      density="comfortable"
+      class="w-100 mb-4 d-flex"
     >
-      <v-btn value="bottle" block>
+      <v-btn value="bottle" class="flex-grow-1">
         <v-icon start>mdi-bottle-baby</v-icon>
         Bottle
       </v-btn>
-      <v-btn value="breast_left" block>
+      <v-btn value="breast_left" class="flex-grow-1">
         <v-icon start>mdi-chevron-left</v-icon>
         Left
       </v-btn>
-      <v-btn value="breast_right" block>
+      <v-btn value="breast_right" class="flex-grow-1">
         <v-icon start>mdi-chevron-right</v-icon>
         Right
       </v-btn>
@@ -26,8 +26,8 @@
     <v-card v-if="!useTimer" variant="outlined" class="mb-4">
       <v-card-text>
         <!-- Date and time inputs -->
-        <v-row class="mb-3">
-          <v-col cols="7">
+        <v-row dense class="mb-3">
+          <v-col cols="6">
             <v-text-field
               v-model="formData.date"
               label="Date"
@@ -37,7 +37,7 @@
               :rules="[rules.required]"
             />
           </v-col>
-          <v-col cols="5">
+          <v-col cols="6">
             <v-text-field
               v-model="formData.time"
               label="Time"

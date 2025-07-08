@@ -1,8 +1,8 @@
 <template>
   <v-form ref="form" @submit.prevent="handleSubmit">
     <!-- Date and time inputs -->
-    <v-row class="mb-4">
-      <v-col cols="7">
+    <v-row dense class="mb-4">
+      <v-col cols="6">
         <v-text-field
           v-model="formData.date"
           label="Date"
@@ -12,7 +12,7 @@
           :rules="[rules.required]"
         />
       </v-col>
-      <v-col cols="5">
+      <v-col cols="6">
         <v-text-field
           v-model="formData.time"
           label="Time"

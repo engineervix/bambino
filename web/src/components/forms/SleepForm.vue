@@ -4,8 +4,8 @@
     <v-card v-if="!useTimer" variant="outlined" class="mb-4">
       <v-card-text>
         <!-- Start date and time -->
-        <v-row class="mb-3">
-          <v-col cols="7">
+        <v-row dense class="mb-3">
+          <v-col cols="6">
             <v-text-field
               v-model="formData.startDate"
               label="Start Date"
@@ -15,7 +15,7 @@
               :rules="[rules.required]"
             />
           </v-col>
-          <v-col cols="5">
+          <v-col cols="6">
             <v-text-field
               v-model="formData.startTime"
               label="Start Time"
@@ -29,8 +29,8 @@
 
         <!-- End date and time (optional) -->
         <v-expand-transition>
-          <v-row v-if="showEndTime" class="mb-3">
-            <v-col cols="7">
+          <v-row v-if="showEndTime" dense class="mb-3">
+            <v-col cols="6">
               <v-text-field
                 v-model="formData.endDate"
                 label="End Date"
@@ -39,7 +39,7 @@
                 density="compact"
               />
             </v-col>
-            <v-col cols="5">
+            <v-col cols="6">
               <v-text-field
                 v-model="formData.endTime"
                 label="End Time"
