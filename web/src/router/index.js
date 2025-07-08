@@ -1,6 +1,12 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 
+// Helper to capitalize first letter
+function capitalize(word) {
+  if (!word) return ''
+  return word.charAt(0).toUpperCase() + word.slice(1)
+}
+
 const router = createRouter({
   history: createWebHistory(),
   routes: [
@@ -70,6 +76,14 @@ router.beforeEach(async (to, from, next) => {
     }
     next()
   }
+})
+
+// Update document title after each navigation
+router.afterEach((to) => {
+  const appName = 'Baby Tracker'
+  // Prefer explicit meta title, otherwise derive from route name
+  const pageTitle = to.meta && to.meta.title ? to.meta.title : (typeof to.name === 'string' ? capitalize(to.name) : '')
+  document.title = pageTitle ? `${appName} » ${pageTitle}` : appName
 })
 
 export default router
