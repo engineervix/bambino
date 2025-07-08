@@ -103,31 +103,33 @@
     </v-container>
 
     <!-- Quick add dialog -->
-    <v-dialog v-model="showQuickAdd" max-width="500" persistent scrollable>
-      <v-card>
-        <v-card-title class="d-flex align-center">
-          <v-icon class="mr-2" :color="currentActivity?.color">{{ currentActivity?.icon }}</v-icon>
-          <span>{{ currentActivity?.title }}</span>
-          <v-spacer></v-spacer>
-          <v-btn icon variant="text" @click="closeDialog">
-            <v-icon>mdi-close</v-icon>
-          </v-btn>
-        </v-card-title>
-        
-        <v-divider></v-divider>
-        
-        <v-card-text class="pa-4">
-          <!-- Dynamic form component -->
-          <component
-            v-if="currentFormComponent"
-            :is="currentFormComponent"
-            :has-timer="currentActivity?.hasTimer"
-            @success="handleFormSuccess"
-            @cancel="closeDialog"
-          />
-        </v-card-text>
-      </v-card>
-    </v-dialog>
+    <v-fade-transition>
+      <v-dialog v-model="showQuickAdd" max-width="500" persistent scrollable>
+        <v-card>
+          <v-card-title class="d-flex align-center">
+            <v-icon class="mr-2" :color="currentActivity?.color">{{ currentActivity?.icon }}</v-icon>
+            <span>{{ currentActivity?.title }}</span>
+            <v-spacer></v-spacer>
+            <v-btn icon variant="text" @click="closeDialog">
+              <v-icon>mdi-close</v-icon>
+            </v-btn>
+          </v-card-title>
+          
+          <v-divider></v-divider>
+          
+          <v-card-text class="pa-4">
+            <!-- Dynamic form component -->
+            <component
+              v-if="currentFormComponent"
+              :is="currentFormComponent"
+              :has-timer="currentActivity?.hasTimer"
+              @success="handleFormSuccess"
+              @cancel="closeDialog"
+            />
+          </v-card-text>
+        </v-card>
+      </v-dialog>
+    </v-fade-transition>
 
     <!-- Success snackbar -->
     <v-snackbar
