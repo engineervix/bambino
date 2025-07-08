@@ -88,6 +88,18 @@
       class="mb-4"
     />
 
+    <!-- Error display -->
+    <v-alert
+      v-if="formError"
+      type="error"
+      variant="tonal"
+      class="mb-4"
+      closable
+      @click:close="formError = null"
+    >
+      {{ formError }}
+    </v-alert>
+
     <!-- Actions -->
     <div class="d-flex gap-2">
       <v-btn
@@ -127,7 +139,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useTimerStore } from '@/stores/timer'
 import { useActivityStore } from '@/stores/activity'
 
@@ -146,6 +158,7 @@ const activityStore = useActivityStore()
 // Form state
 const form = ref(null)
 const loading = ref(false)
+const formError = ref(null)
 const useTimer = ref(false)
 const timerInterval = ref(null)
 const formData = ref({
@@ -156,23 +169,32 @@ const formData = ref({
   notes: ''
 })
 
-// Timer display
+// Timer display with persistent calculation
 const timerDisplay = computed(() => {
   const timer = timerStore.activeTimers.pump
   if (!timer) return '00:00'
   
-  const elapsed = Math.floor((Date.now() - new Date(timer.startTime).getTime()) / 1000)
+  const elapsed = timerStore.getTimerDuration('pump')
   const minutes = Math.floor(elapsed / 60)
   const seconds = elapsed % 60
   return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`
 })
 
-// Check for active timer on mount
-onMounted(() => {
-  if (timerStore.activeTimers.pump) {
+// Watch for active timer changes (handles persistence restore)
+watch(() => timerStore.activeTimers.pump, (newTimer) => {
+  if (newTimer) {
     useTimer.value = true
     startTimerDisplay()
+  } else {
+    useTimer.value = false
+    if (timerInterval.value) {
+      clearInterval(timerInterval.value)
+    }
   }
+}, { immediate: true })
+
+onMounted(() => {
+  // Timer state is handled by the watcher
 })
 
 onUnmounted(() => {
@@ -183,14 +205,18 @@ onUnmounted(() => {
 
 // Start timer display update
 function startTimerDisplay() {
+  if (timerInterval.value) {
+    clearInterval(timerInterval.value)
+  }
   timerInterval.value = setInterval(() => {
-    // Force reactivity update
+    // Force reactivity update - the computed will recalculate
   }, 1000)
 }
 
 // Start timer
 async function startTimer() {
   loading.value = true
+  formError.value = null
   
   const result = await activityStore.startTimer('pump', {
     pump_data: {
@@ -201,8 +227,8 @@ async function startTimer() {
   
   if (result.success) {
     timerStore.startTimer('pump', result.data.id)
-    useTimer.value = true
-    startTimerDisplay()
+  } else {
+    formError.value = result.error || 'Failed to start timer'
   }
   
   loading.value = false
@@ -211,21 +237,30 @@ async function startTimer() {
 // Stop timer
 async function stopTimer() {
   loading.value = true
+  formError.value = null
   
   const timer = timerStore.activeTimers.pump
   if (!timer || !timer.activityId) {
+    formError.value = 'No active timer found'
     loading.value = false
     return
   }
   
-  const result = await activityStore.stopTimer(timer.activityId, {
-    amount_ml: formData.value.amount_ml,
-    notes: formData.value.notes
-  })
+  const data = {}
+  if (formData.value.amount_ml) {
+    data.amount_ml = formData.value.amount_ml
+  }
+  if (formData.value.notes) {
+    data.notes = formData.value.notes
+  }
+  
+  const result = await activityStore.stopTimer(timer.activityId, data)
   
   if (result.success) {
     timerStore.stopTimer('pump')
     emit('success', result.data)
+  } else {
+    formError.value = result.error || 'Failed to stop timer'
   }
   
   loading.value = false
@@ -234,6 +269,7 @@ async function stopTimer() {
 // Submit form
 async function handleSubmit() {
   loading.value = true
+  formError.value = null
   
   const activityData = {
     type: 'pump',
@@ -259,6 +295,8 @@ async function handleSubmit() {
   
   if (result.success) {
     emit('success', result.data)
+  } else {
+    formError.value = result.error || 'Failed to save activity'
   }
   
   loading.value = false

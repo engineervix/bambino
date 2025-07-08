@@ -11,6 +11,9 @@ const apiClient = axios.create({
   }
 })
 
+// Track if we're already handling an auth error to prevent loops
+let isHandlingAuthError = false
+
 // Request interceptor
 apiClient.interceptors.request.use(
   config => {
@@ -27,26 +30,52 @@ apiClient.interceptors.response.use(
   response => {
     return response
   },
-  error => {
+  async error => {
     if (error.response) {
       // Handle 401 Unauthorized
-      if (error.response.status === 401) {
-        // Import auth store dynamically to avoid circular imports
-        import('@/stores/auth').then(({ useAuthStore }) => {
+      if (error.response.status === 401 && !isHandlingAuthError) {
+        isHandlingAuthError = true
+        
+        try {
+          // Import auth store dynamically to avoid circular imports
+          const { useAuthStore } = await import('@/stores/auth')
           const authStore = useAuthStore()
+          
           // Clear auth state and redirect to login
           authStore.clearAuthState()
-          router.push('/login')
-        })
+          
+          // Only redirect if not already on login page
+          if (router.currentRoute.value.name !== 'login') {
+            router.push('/login')
+          }
+        } catch (importError) {
+          console.warn('Failed to handle auth error:', importError)
+          // Fallback: just redirect to login
+          if (router.currentRoute.value.name !== 'login') {
+            router.push('/login')
+          }
+        } finally {
+          // Reset flag after a short delay
+          setTimeout(() => {
+            isHandlingAuthError = false
+          }, 1000)
+        }
       }
       
       // Return error with message from backend
-      const message = error.response.data?.message || error.response.data?.error || 'An error occurred'
+      const message = error.response.data?.message || 
+                     error.response.data?.error || 
+                     `Server error (${error.response.status})`
       error.message = message
     } else if (error.request) {
-      error.message = 'No response from server'
+      // Network error
+      error.message = 'Network error - please check your connection'
+    } else if (error.code === 'ECONNABORTED') {
+      // Timeout error
+      error.message = 'Request timed out - please try again'
     } else {
-      error.message = 'Request failed'
+      // Other error
+      error.message = error.message || 'An unexpected error occurred'
     }
     
     return Promise.reject(error)

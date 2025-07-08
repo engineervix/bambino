@@ -65,6 +65,18 @@
       class="mb-4"
     />
 
+    <!-- Error display -->
+    <v-alert
+      v-if="formError"
+      type="error"
+      variant="tonal"
+      class="mb-4"
+      closable
+      @click:close="formError = null"
+    >
+      {{ formError }}
+    </v-alert>
+
     <!-- Submit button -->
     <v-btn
       type="submit"
@@ -89,6 +101,7 @@ const activityStore = useActivityStore()
 // Form state
 const form = ref(null)
 const loading = ref(false)
+const formError = ref(null)
 const formData = ref({
   date: new Date().toISOString().split('T')[0],
   weight_kg: null,
@@ -114,6 +127,7 @@ async function handleSubmit() {
   if (!valid) return
 
   loading.value = true
+  formError.value = null
   
   const activityData = {
     type: 'growth',
@@ -138,6 +152,8 @@ async function handleSubmit() {
   
   if (result.success) {
     emit('success', result.data)
+  } else {
+    formError.value = result.error || 'Failed to save measurements'
   }
   
   loading.value = false

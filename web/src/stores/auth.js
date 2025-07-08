@@ -26,6 +26,10 @@ export const useAuthStore = defineStore('auth', () => {
     try {
       const response = await apiClient.post('/auth/login', credentials)
       await checkAuth() // Get full user data and babies
+      
+      // Initialize timers after successful auth
+      await initializeUserSession()
+      
       router.push('/')
       return { success: true }
     } catch (err) {
@@ -40,18 +44,17 @@ export const useAuthStore = defineStore('auth', () => {
     loading.value = true
     
     try {
+      // Clear timers before logout
+      const { useTimerStore } = await import('@/stores/timer')
+      const timerStore = useTimerStore()
+      timerStore.clearAllTimers()
+      
       await apiClient.post('/auth/logout')
-      user.value = null
-      babies.value = []
-      selectedBaby.value = null
-      authChecked.value = false // Reset auth check state
+      clearAuthState()
       router.push('/login')
     } catch (err) {
       // Even if logout fails, clear local state
-      user.value = null
-      babies.value = []
-      selectedBaby.value = null
-      authChecked.value = false
+      clearAuthState()
       router.push('/login')
     } finally {
       loading.value = false
@@ -83,7 +86,26 @@ export const useAuthStore = defineStore('auth', () => {
       return isAuthenticated.value
     }
     
-    return await checkAuth()
+    const isAuth = await checkAuth()
+    if (isAuth) {
+      await initializeUserSession()
+    }
+    return isAuth
+  }
+
+  // Initialize user session data (timers, baby selection)
+  async function initializeUserSession() {
+    try {
+      // Load selected baby from localStorage
+      loadSelectedBaby()
+      
+      // Initialize timers
+      const { useTimerStore } = await import('@/stores/timer')
+      const timerStore = useTimerStore()
+      await timerStore.initializeTimers()
+    } catch (error) {
+      console.warn('Failed to initialize user session:', error)
+    }
   }
 
   // Fast auth check - uses local state if already checked
@@ -116,7 +138,7 @@ export const useAuthStore = defineStore('auth', () => {
 
   function selectBaby(baby) {
     selectedBaby.value = baby
-    // Could persist selection to localStorage
+    // Persist selection to localStorage
     if (baby) {
       localStorage.setItem('selectedBabyId', baby.id)
     }
