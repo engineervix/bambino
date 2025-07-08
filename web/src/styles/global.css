@@ -1,0 +1,28 @@
+/* Global typography & spacing tweaks */
+html {
+  font-size: 15px; /* Slightly larger base font for readability */
+}
+
+body {
+  line-height: 1.4;
+  -webkit-font-smoothing: antialiased;
+  scroll-behavior: smooth;
+}
+
+/* Consistent 8-pt spacing utility (gap-x) */
+.gap-1 {
+  gap: 8px !important;
+}
+.gap-2 {
+  gap: 16px !important;
+}
+.gap-3 {
+  gap: 24px !important;
+}
+
+/* Prevent accidental image dragging/selecting */
+img {
+  -webkit-user-select: none;
+  user-select: none;
+  pointer-events: none;
+} 
