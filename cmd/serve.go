@@ -124,6 +124,11 @@ func runServer(overridePort string) {
 	api.POST("/activities/timer/start", handlers.StartActivityTimer)
 	api.PUT("/activities/timer/:id/stop", handlers.StopActivityTimer)
 
+	// Statistics routes
+	api.GET("/stats/daily", handlers.GetDailyStats)
+	api.GET("/stats/recent", handlers.GetRecentStats)
+	api.GET("/stats/weekly", handlers.GetWeeklyStats)
+
 	// Example protected route (for testing)
 	api.GET("/test", func(c echo.Context) error {
 		userID := c.Get("user_id")
