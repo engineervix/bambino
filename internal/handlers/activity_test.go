@@ -234,6 +234,10 @@ func TestCreateActivity(t *testing.T) {
 			Type:      "feed",
 			StartTime: time.Now(),
 			Notes:     "Test feeding",
+			FeedData: &FeedData{
+				FeedType: "bottle",
+				AmountML: floatPtr(120),
+			},
 		}
 
 		c, rec := createEchoContext(ctx, "POST", "/api/activities", req)
@@ -388,6 +392,10 @@ func TestUpdateActivity(t *testing.T) {
 			Type:      "diaper",
 			StartTime: activity.StartTime,
 			Notes:     "Updated notes",
+			DiaperData: &DiaperData{
+				Wet:   true,
+				Dirty: false,
+			},
 		}
 
 		c, rec := createEchoContext(ctx, "PUT", "/api/activities/"+activity.ID.String(), req)
@@ -411,6 +419,10 @@ func TestUpdateActivity(t *testing.T) {
 		req := ActivityRequest{
 			Type:      "diaper",
 			StartTime: time.Now(),
+			DiaperData: &DiaperData{
+				Wet:   true,
+				Dirty: false,
+			},
 		}
 
 		nonExistentID := uuid.New().String()
@@ -427,7 +439,7 @@ func TestUpdateActivity(t *testing.T) {
 
 	t.Run("update activity invalid request", func(t *testing.T) {
 		req := ActivityRequest{
-			Type:      "invalid",
+			Type:      "invalid_type", // Make it clearly invalid
 			StartTime: time.Now(),
 		}
 
@@ -528,6 +540,9 @@ func TestValidateActivityRequest(t *testing.T) {
 		req := &ActivityRequest{
 			Type:      "feed",
 			StartTime: time.Now(),
+			FeedData: &FeedData{
+				FeedType: "bottle",
+			},
 		}
 
 		err := validateActivityRequest(req)
@@ -545,7 +560,7 @@ func TestValidateActivityRequest(t *testing.T) {
 
 	t.Run("invalid type", func(t *testing.T) {
 		req := &ActivityRequest{
-			Type:      "invalid",
+			Type:      "invalid_type",
 			StartTime: time.Now(),
 		}
 
@@ -631,6 +646,10 @@ func TestActivityCrossBabyAccess(t *testing.T) {
 		req := ActivityRequest{
 			Type:      "diaper",
 			StartTime: time.Now(),
+			DiaperData: &DiaperData{
+				Wet:   true,
+				Dirty: false,
+			},
 		}
 
 		c, _ := createEchoContext(ctx, "PUT", "/api/activities/"+anotherActivity.ID.String(), req)
