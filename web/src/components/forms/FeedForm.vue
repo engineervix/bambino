@@ -25,6 +25,16 @@
     <!-- Timer or manual entry -->
     <v-card v-if="!useTimer" variant="outlined" class="mb-4">
       <v-card-text>
+        <!-- Date input -->
+        <v-text-field
+          v-model="formData.date"
+          label="Date"
+          type="date"
+          variant="outlined"
+          density="compact"
+          class="mb-3"
+        />
+
         <!-- Time input -->
         <v-text-field
           v-model="formData.time"
@@ -144,6 +154,7 @@
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useTimerStore } from '@/stores/timer'
 import { useActivityStore } from '@/stores/activity'
+import { combineDateAndTime, getCurrentDate, getCurrentTime } from '@/utils/datetime'
 
 const props = defineProps({
   hasTimer: {
@@ -165,7 +176,8 @@ const useTimer = ref(false)
 const timerInterval = ref(null)
 const formData = ref({
   feed_type: 'bottle',
-  time: new Date().toTimeString().slice(0, 5),
+  date: getCurrentDate(),
+  time: getCurrentTime(),
   amount_ml: null,
   duration_minutes: null,
   notes: ''
@@ -275,9 +287,11 @@ async function handleSubmit() {
   loading.value = true
   formError.value = null
   
+  const activityDateTime = combineDateAndTime(formData.value.date, formData.value.time)
+  
   const activityData = {
     type: 'feed',
-    start_time: new Date(`${new Date().toDateString()} ${formData.value.time}`),
+    start_time: activityDateTime,
     notes: formData.value.notes,
     feed_data: {
       feed_type: formData.value.feed_type
@@ -291,8 +305,7 @@ async function handleSubmit() {
   if (formData.value.feed_type !== 'bottle' && formData.value.duration_minutes) {
     activityData.feed_data.duration_minutes = formData.value.duration_minutes
     // Calculate end time
-    const startTime = new Date(activityData.start_time)
-    activityData.end_time = new Date(startTime.getTime() + formData.value.duration_minutes * 60000)
+    activityData.end_time = new Date(activityDateTime.getTime() + formData.value.duration_minutes * 60000)
   }
   
   const result = await activityStore.createActivity(activityData)

@@ -1,6 +1,6 @@
 <template>
   <v-form ref="form" @submit.prevent="handleSubmit">
-    <!-- Date -->
+    <!-- Date input -->
     <v-text-field
       v-model="formData.date"
       label="Date"
@@ -60,6 +60,7 @@
 <script setup>
 import { ref } from 'vue'
 import { useActivityStore } from '@/stores/activity'
+import { getCurrentDate } from '@/utils/datetime'
 
 const emit = defineEmits(['success', 'cancel'])
 
@@ -70,7 +71,7 @@ const form = ref(null)
 const loading = ref(false)
 const formError = ref(null)
 const formData = ref({
-  date: new Date().toISOString().split('T')[0],
+  date: getCurrentDate(),
   milestone_type: '',
   description: ''
 })
@@ -103,10 +104,13 @@ async function handleSubmit() {
   loading.value = true
   formError.value = null
   
+  // Milestones typically happen at a memorable time, so we'll set to noon
+  const activityDateTime = new Date(`${formData.value.date}T12:00:00`)
+  
   const activityData = {
     type: 'milestone',
-    start_time: new Date(`${formData.value.date}T12:00:00`), // Default to noon
-    notes: '', // Using description field instead
+    start_time: activityDateTime,
+    notes: '', // Using description field instead of notes for milestones
     milestone_data: {
       milestone_type: formData.value.milestone_type,
       description: formData.value.description

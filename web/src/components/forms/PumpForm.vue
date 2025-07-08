@@ -25,15 +25,27 @@
     <!-- Timer or manual entry -->
     <v-card v-if="!useTimer" variant="outlined" class="mb-4">
       <v-card-text>
-        <!-- Time input -->
-        <v-text-field
-          v-model="formData.time"
-          label="Time"
-          type="time"
-          variant="outlined"
-          density="compact"
-          class="mb-3"
-        />
+        <!-- Date and time inputs -->
+        <v-row class="mb-3">
+          <v-col cols="7">
+            <v-text-field
+              v-model="formData.date"
+              label="Date"
+              type="date"
+              variant="outlined"
+              density="compact"
+            />
+          </v-col>
+          <v-col cols="5">
+            <v-text-field
+              v-model="formData.time"
+              label="Time"
+              type="time"
+              variant="outlined"
+              density="compact"
+            />
+          </v-col>
+        </v-row>
 
         <!-- Amount -->
         <v-text-field
@@ -142,6 +154,7 @@
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useTimerStore } from '@/stores/timer'
 import { useActivityStore } from '@/stores/activity'
+import { combineDateAndTime, getCurrentDate, getCurrentTime } from '@/utils/datetime'
 
 const props = defineProps({
   hasTimer: {
@@ -163,7 +176,8 @@ const useTimer = ref(false)
 const timerInterval = ref(null)
 const formData = ref({
   breast: 'both',
-  time: new Date().toTimeString().slice(0, 5),
+  date: getCurrentDate(),
+  time: getCurrentTime(),
   amount_ml: null,
   duration_minutes: null,
   notes: ''
@@ -271,9 +285,11 @@ async function handleSubmit() {
   loading.value = true
   formError.value = null
   
+  const activityDateTime = combineDateAndTime(formData.value.date, formData.value.time)
+  
   const activityData = {
     type: 'pump',
-    start_time: new Date(`${new Date().toDateString()} ${formData.value.time}`),
+    start_time: activityDateTime,
     notes: formData.value.notes,
     pump_data: {
       breast: formData.value.breast
@@ -287,8 +303,7 @@ async function handleSubmit() {
   if (formData.value.duration_minutes) {
     activityData.pump_data.duration_minutes = formData.value.duration_minutes
     // Calculate end time
-    const startTime = new Date(activityData.start_time)
-    activityData.end_time = new Date(startTime.getTime() + formData.value.duration_minutes * 60000)
+    activityData.end_time = new Date(activityDateTime.getTime() + formData.value.duration_minutes * 60000)
   }
   
   const result = await activityStore.createActivity(activityData)

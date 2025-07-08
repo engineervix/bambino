@@ -1,14 +1,26 @@
 <template>
   <v-form ref="form" @submit.prevent="handleSubmit">
-    <!-- Time input -->
-    <v-text-field
-      v-model="formData.time"
-      label="Time"
-      type="time"
-      variant="outlined"
-      density="compact"
-      class="mb-4"
-    />
+    <!-- Date and time inputs -->
+    <v-row class="mb-4">
+      <v-col cols="7">
+        <v-text-field
+          v-model="formData.date"
+          label="Date"
+          type="date"
+          variant="outlined"
+          density="compact"
+        />
+      </v-col>
+      <v-col cols="5">
+        <v-text-field
+          v-model="formData.time"
+          label="Time"
+          type="time"
+          variant="outlined"
+          density="compact"
+        />
+      </v-col>
+    </v-row>
 
     <!-- Diaper type -->
     <v-card variant="outlined" class="mb-4">
@@ -98,6 +110,7 @@
 <script setup>
 import { ref, watch } from 'vue'
 import { useActivityStore } from '@/stores/activity'
+import { combineDateAndTime, getCurrentDate, getCurrentTime } from '@/utils/datetime'
 
 const emit = defineEmits(['success', 'cancel'])
 
@@ -108,7 +121,8 @@ const form = ref(null)
 const loading = ref(false)
 const formError = ref(null)
 const formData = ref({
-  time: new Date().toTimeString().slice(0, 5),
+  date: getCurrentDate(),
+  time: getCurrentTime(),
   wet: false,
   dirty: false,
   color: null,
@@ -150,9 +164,11 @@ async function handleSubmit() {
   loading.value = true
   formError.value = null
   
+  const activityDateTime = combineDateAndTime(formData.value.date, formData.value.time)
+  
   const activityData = {
     type: 'diaper',
-    start_time: new Date(`${new Date().toDateString()} ${formData.value.time}`),
+    start_time: activityDateTime,
     notes: formData.value.notes,
     diaper_data: {
       wet: formData.value.wet,

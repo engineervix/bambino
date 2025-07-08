@@ -115,6 +115,7 @@
 <script setup>
 import { ref, watch } from 'vue'
 import { useActivityStore } from '@/stores/activity'
+import { combineDateAndTime, getCurrentDate, getCurrentTime } from '@/utils/datetime'
 
 const emit = defineEmits(['success', 'cancel'])
 
@@ -126,8 +127,8 @@ const loading = ref(false)
 const formError = ref(null)
 const formData = ref({
   record_type: 'checkup',
-  date: new Date().toISOString().split('T')[0],
-  time: new Date().toTimeString().slice(0, 5),
+  date: getCurrentDate(),
+  time: getCurrentTime(),
   provider: '',
   vaccine_name: '',
   symptoms: '',
@@ -161,9 +162,11 @@ async function handleSubmit() {
   loading.value = true
   formError.value = null
   
+  const activityDateTime = combineDateAndTime(formData.value.date, formData.value.time)
+  
   const activityData = {
     type: 'health',
-    start_time: new Date(`${formData.value.date} ${formData.value.time}`),
+    start_time: activityDateTime,
     notes: formData.value.notes,
     health_data: {
       record_type: formData.value.record_type,

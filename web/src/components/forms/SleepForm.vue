@@ -3,25 +3,63 @@
     <!-- Timer or manual entry -->
     <v-card v-if="!useTimer" variant="outlined" class="mb-4">
       <v-card-text>
-        <!-- Start time -->
-        <v-text-field
-          v-model="formData.startTime"
-          label="Start Time"
-          type="time"
-          variant="outlined"
-          density="compact"
-          class="mb-3"
-        />
+        <!-- Start date and time -->
+        <v-row class="mb-3">
+          <v-col cols="7">
+            <v-text-field
+              v-model="formData.startDate"
+              label="Start Date"
+              type="date"
+              variant="outlined"
+              density="compact"
+            />
+          </v-col>
+          <v-col cols="5">
+            <v-text-field
+              v-model="formData.startTime"
+              label="Start Time"
+              type="time"
+              variant="outlined"
+              density="compact"
+            />
+          </v-col>
+        </v-row>
 
-        <!-- End time (optional) -->
-        <v-text-field
-          v-model="formData.endTime"
-          label="End Time (optional)"
-          type="time"
+        <!-- End date and time (optional) -->
+        <v-row v-if="showEndTime">
+          <v-col cols="7">
+            <v-text-field
+              v-model="formData.endDate"
+              label="End Date"
+              type="date"
+              variant="outlined"
+              density="compact"
+            />
+          </v-col>
+          <v-col cols="5">
+            <v-text-field
+              v-model="formData.endTime"
+              label="End Time"
+              type="time"
+              variant="outlined"
+              density="compact"
+              clearable
+              @click:clear="clearEndTime"
+            />
+          </v-col>
+        </v-row>
+
+        <!-- Toggle for end time -->
+        <v-btn
+          v-if="!showEndTime"
           variant="outlined"
-          density="compact"
-          clearable
-        />
+          size="small"
+          @click="enableEndTime"
+          class="mb-3"
+        >
+          <v-icon start>mdi-clock-plus</v-icon>
+          Add End Time
+        </v-btn>
       </v-card-text>
     </v-card>
 
@@ -45,7 +83,7 @@
     />
 
     <!-- Quality (only if ending sleep or manual entry with end time) -->
-    <v-card v-if="useTimer || formData.endTime" variant="outlined" class="mb-4">
+    <v-card v-if="useTimer || showEndTime" variant="outlined" class="mb-4">
       <v-card-text>
         <p class="text-body-2 mb-2">Sleep Quality</p>
         <v-rating
@@ -121,6 +159,7 @@
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useTimerStore } from '@/stores/timer'
 import { useActivityStore } from '@/stores/activity'
+import { combineDateAndTime, getCurrentDate, getCurrentTime } from '@/utils/datetime'
 
 const props = defineProps({
   hasTimer: {
@@ -140,8 +179,11 @@ const loading = ref(false)
 const formError = ref(null)
 const useTimer = ref(false)
 const timerInterval = ref(null)
+const showEndTime = ref(false)
 const formData = ref({
-  startTime: new Date().toTimeString().slice(0, 5),
+  startDate: getCurrentDate(),
+  startTime: getCurrentTime(),
+  endDate: getCurrentDate(),
   endTime: null,
   location: 'crib',
   quality: 3,
@@ -206,6 +248,19 @@ function startTimerDisplay() {
   }, 1000)
 }
 
+// Enable end time input
+function enableEndTime() {
+  showEndTime.value = true
+  // Set end time to current time as default
+  formData.value.endTime = getCurrentTime()
+}
+
+// Clear end time
+function clearEndTime() {
+  showEndTime.value = false
+  formData.value.endTime = null
+}
+
 // Start timer
 async function startTimer() {
   loading.value = true
@@ -264,17 +319,28 @@ async function handleSubmit() {
   loading.value = true
   formError.value = null
   
+  const startDateTime = combineDateAndTime(formData.value.startDate, formData.value.startTime)
+  
   const activityData = {
     type: 'sleep',
-    start_time: new Date(`${new Date().toDateString()} ${formData.value.startTime}`),
+    start_time: startDateTime,
     notes: formData.value.notes,
     sleep_data: {
       location: formData.value.location
     }
   }
   
-  if (formData.value.endTime) {
-    activityData.end_time = new Date(`${new Date().toDateString()} ${formData.value.endTime}`)
+  if (showEndTime.value && formData.value.endTime) {
+    const endDateTime = combineDateAndTime(formData.value.endDate, formData.value.endTime)
+    
+    // Validate end time is after start time
+    if (endDateTime <= startDateTime) {
+      formError.value = 'End time must be after start time'
+      loading.value = false
+      return
+    }
+    
+    activityData.end_time = endDateTime
     if (formData.value.quality) {
       activityData.sleep_data.quality = formData.value.quality
     }

@@ -93,6 +93,7 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { useActivityStore } from '@/stores/activity'
+import { getCurrentDate } from '@/utils/datetime'
 
 const emit = defineEmits(['success', 'cancel'])
 
@@ -103,7 +104,7 @@ const form = ref(null)
 const loading = ref(false)
 const formError = ref(null)
 const formData = ref({
-  date: new Date().toISOString().split('T')[0],
+  date: getCurrentDate(),
   weight_kg: null,
   height_cm: null,
   head_circumference_cm: null,
@@ -129,9 +130,13 @@ async function handleSubmit() {
   loading.value = true
   formError.value = null
   
+  // Growth measurements typically happen at a consistent time (like doctor visits)
+  // so we'll set it to noon on the selected date
+  const activityDateTime = new Date(`${formData.value.date}T12:00:00`)
+  
   const activityData = {
     type: 'growth',
-    start_time: new Date(`${formData.value.date}T12:00:00`), // Default to noon
+    start_time: activityDateTime,
     notes: formData.value.notes,
     growth_data: {}
   }
