@@ -85,40 +85,87 @@
     </v-container>
 
     <!-- Quick add dialog -->
-    <v-dialog v-model="showQuickAdd" max-width="500" persistent>
+    <v-dialog v-model="showQuickAdd" max-width="500" persistent scrollable>
       <v-card>
-        <v-card-title>
-          <v-icon class="mr-2">{{ currentActivity?.icon }}</v-icon>
-          {{ currentActivity?.title }}
-        </v-card-title>
-        <v-card-text>
-          <p>Quick add form for {{ currentActivity?.id }} - To be implemented</p>
-        </v-card-text>
-        <v-card-actions>
+        <v-card-title class="d-flex align-center">
+          <v-icon class="mr-2" :color="currentActivity?.color">{{ currentActivity?.icon }}</v-icon>
+          <span>{{ currentActivity?.title }}</span>
           <v-spacer></v-spacer>
-          <v-btn text @click="showQuickAdd = false">Cancel</v-btn>
-          <v-btn color="primary" text>Save</v-btn>
-        </v-card-actions>
+          <v-btn icon variant="text" @click="closeDialog">
+            <v-icon>mdi-close</v-icon>
+          </v-btn>
+        </v-card-title>
+        
+        <v-divider></v-divider>
+        
+        <v-card-text class="pa-4">
+          <!-- Dynamic form component -->
+          <component
+            v-if="currentFormComponent"
+            :is="currentFormComponent"
+            :has-timer="currentActivity?.hasTimer"
+            @success="handleFormSuccess"
+            @cancel="closeDialog"
+          />
+        </v-card-text>
       </v-card>
     </v-dialog>
+
+    <!-- Success snackbar -->
+    <v-snackbar
+      v-model="showSuccess"
+      color="success"
+      :timeout="3000"
+      location="top"
+    >
+      <v-icon start>mdi-check-circle</v-icon>
+      Activity saved successfully!
+    </v-snackbar>
   </v-container>
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, markRaw } from 'vue'
 import { format } from 'date-fns'
 import { useActivityStore } from '@/stores/activity'
 import ActivityCard from '@/components/activity/ActivityCard.vue'
+
+// Form components
+import FeedForm from '@/components/forms/FeedForm.vue'
+import PumpForm from '@/components/forms/PumpForm.vue'
+import DiaperForm from '@/components/forms/DiaperForm.vue'
+import SleepForm from '@/components/forms/SleepForm.vue'
+import GrowthForm from '@/components/forms/GrowthForm.vue'
+import HealthForm from '@/components/forms/HealthForm.vue'
+import MilestoneForm from '@/components/forms/MilestoneForm.vue'
+
+// Mark components as raw to avoid reactivity overhead
+const formComponents = {
+  feed: markRaw(FeedForm),
+  pump: markRaw(PumpForm),
+  diaper: markRaw(DiaperForm),
+  sleep: markRaw(SleepForm),
+  growth: markRaw(GrowthForm),
+  health: markRaw(HealthForm),
+  milestone: markRaw(MilestoneForm)
+}
 
 const activityStore = useActivityStore()
 
 // State
 const showQuickAdd = ref(false)
+const showSuccess = ref(false)
 const currentActivity = ref(null)
 
 // Current date display
 const currentDate = computed(() => {
   return format(new Date(), 'EEEE, MMM d')
+})
+
+// Current form component
+const currentFormComponent = computed(() => {
+  if (!currentActivity.value) return null
+  return formComponents[currentActivity.value.id] || null
 })
 
 // Main activities (cards)
@@ -148,8 +195,29 @@ function handleActivityClick(activity) {
 }
 
 function handleQuickAdd(activity) {
-  currentActivity.value = activity
+  // Find the full activity config from store
+  const fullActivity = activityStore.activityTypes.find(a => a.id === activity.id)
+  currentActivity.value = fullActivity || activity
   showQuickAdd.value = true
+}
+
+function handleFormSuccess(data) {
+  // Close dialog
+  closeDialog()
+  
+  // Show success message
+  showSuccess.value = true
+  
+  // Optionally refresh stats
+  activityStore.getRecentStats()
+}
+
+function closeDialog() {
+  showQuickAdd.value = false
+  // Clear current activity after animation
+  setTimeout(() => {
+    currentActivity.value = null
+  }, 300)
 }
 
 // Load recent stats on mount
