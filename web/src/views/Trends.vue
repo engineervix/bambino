@@ -8,7 +8,7 @@
       <!-- Last Feed -->
       <v-col cols="12" sm="6" md="3">
         <v-card elevation="1" class="pa-4 text-center">
-          <v-icon icon="mdi-baby-bottle" size="36" class="mb-2" />
+          <v-icon icon="mdi-baby-bottle" size="36" class="mb-2" color="accent1" />
           <div class="text-subtitle-1">Last fed</div>
           <div class="text-h5 font-weight-bold">
             <span v-if="statsStore.loading">…</span>
@@ -23,7 +23,7 @@
       <!-- Diapers today -->
       <v-col cols="12" sm="6" md="3">
         <v-card elevation="1" class="pa-4 text-center">
-          <v-icon icon="mdi-toilet" size="36" class="mb-2" />
+          <v-icon icon="mdi-toilet" size="36" class="mb-2" color="accent2" />
           <div class="text-subtitle-1">Diapers today</div>
           <div class="text-h5 font-weight-bold">
             <span v-if="statsStore.loading">…</span>
@@ -35,7 +35,7 @@
       <!-- Sleeping -->
       <v-col cols="12" sm="6" md="3">
         <v-card elevation="1" class="pa-4 text-center">
-          <v-icon icon="mdi-sleep" size="36" class="mb-2" />
+          <v-icon icon="mdi-sleep" size="36" class="mb-2" color="accent1" />
           <div class="text-subtitle-1">Currently sleeping</div>
           <div class="text-h5 font-weight-bold">
             <span v-if="statsStore.loading">…</span>
@@ -47,7 +47,7 @@
       <!-- Weekly activities -->
       <v-col cols="12" sm="6" md="3">
         <v-card elevation="1" class="pa-4 text-center">
-          <v-icon icon="mdi-calendar-week" size="36" class="mb-2" />
+          <v-icon icon="mdi-calendar-week" size="36" class="mb-2" color="accent2" />
           <div class="text-subtitle-1">Activities this week</div>
           <div class="text-h5 font-weight-bold">
             <span v-if="statsStore.loading">…</span>
