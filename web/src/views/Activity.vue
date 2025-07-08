@@ -29,7 +29,8 @@
           :key="activity.id"
           cols="12"
           sm="6"
-          class="py-2"
+          lg="4"
+          class="py-3"
         >
           <activity-card
             :title="activity.title"
@@ -199,7 +200,7 @@ const mainActivities = computed(() => {
       id: 'feed',
       title: 'Feed',
       description: 'Track a feeding session',
-      icon: 'mdi-bottle-baby',
+      icon: 'mdi-baby-bottle',
       color: 'feed',
       hasTimer: true
     },
