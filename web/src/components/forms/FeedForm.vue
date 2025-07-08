@@ -25,25 +25,29 @@
     <!-- Timer or manual entry -->
     <v-card v-if="!useTimer" variant="outlined" class="mb-4">
       <v-card-text>
-        <!-- Date input -->
-        <v-text-field
-          v-model="formData.date"
-          label="Date"
-          type="date"
-          variant="outlined"
-          density="compact"
-          class="mb-3"
-        />
-
-        <!-- Time input -->
-        <v-text-field
-          v-model="formData.time"
-          label="Time"
-          type="time"
-          variant="outlined"
-          density="compact"
-          class="mb-3"
-        />
+        <!-- Date and time inputs -->
+        <v-row class="mb-3">
+          <v-col cols="7">
+            <v-text-field
+              v-model="formData.date"
+              label="Date"
+              type="date"
+              variant="outlined"
+              density="compact"
+              :rules="[rules.required]"
+            />
+          </v-col>
+          <v-col cols="5">
+            <v-text-field
+              v-model="formData.time"
+              label="Time"
+              type="time"
+              variant="outlined"
+              density="compact"
+              :rules="[rules.required]"
+            />
+          </v-col>
+        </v-row>
 
         <!-- Amount input (for bottle) -->
         <v-text-field
@@ -54,6 +58,8 @@
           variant="outlined"
           density="compact"
           append-inner-icon="mdi-baby-bottle"
+          :rules="[rules.positiveNumber]"
+          class="mb-3"
         />
 
         <!-- Duration input (for breast) -->
@@ -65,6 +71,7 @@
           variant="outlined"
           density="compact"
           append-inner-icon="mdi-timer"
+          :rules="[rules.positiveInteger]"
         />
       </v-card-text>
     </v-card>
@@ -85,6 +92,7 @@
           variant="outlined"
           density="compact"
           append-inner-icon="mdi-baby-bottle"
+          :rules="[rules.positiveNumber]"
           class="mt-3"
         />
       </v-card-text>
@@ -97,19 +105,21 @@
       variant="outlined"
       rows="2"
       density="compact"
+      :rules="[rules.maxLength(1000)]"
       class="mb-4"
     />
 
-    <!-- Error display -->
+    <!-- Standardized error display -->
     <v-alert
       v-if="formError"
       type="error"
       variant="tonal"
       class="mb-4"
       closable
-      @click:close="formError = null"
+      @click:close="clearFormError"
     >
-      {{ formError }}
+      <div v-if="formError.title" class="font-weight-medium mb-1">{{ formError.title }}</div>
+      <div>{{ formError.message || formError }}</div>
     </v-alert>
 
     <!-- Actions -->
@@ -120,6 +130,7 @@
         color="primary"
         @click="startTimer"
         :loading="loading"
+        :disabled="loading"
         block
       >
         <v-icon start>mdi-timer</v-icon>
@@ -131,6 +142,7 @@
         color="success"
         @click="stopTimer"
         :loading="loading"
+        :disabled="loading"
         block
       >
         <v-icon start>mdi-stop</v-icon>
@@ -142,6 +154,7 @@
         type="submit"
         color="primary"
         :loading="loading"
+        :disabled="loading"
         block
       >
         Save
@@ -154,7 +167,9 @@
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useTimerStore } from '@/stores/timer'
 import { useActivityStore } from '@/stores/activity'
+import { useErrorHandling } from '@/composables/useErrorHandling'
 import { combineDateAndTime, getCurrentDate, getCurrentTime } from '@/utils/datetime'
+import { validationRules, validateDateTime } from '@/utils/validation'
 
 const props = defineProps({
   hasTimer: {
@@ -165,13 +180,15 @@ const props = defineProps({
 
 const emit = defineEmits(['success', 'cancel'])
 
+// Stores
 const timerStore = useTimerStore()
 const activityStore = useActivityStore()
 
+// Error handling
+const { error: formError, loading, handleError, clearError: clearFormError, withErrorHandling } = useErrorHandling()
+
 // Form state
 const form = ref(null)
-const loading = ref(false)
-const formError = ref(null)
 const useTimer = ref(false)
 const timerInterval = ref(null)
 const formData = ref({
@@ -183,139 +200,163 @@ const formData = ref({
   notes: ''
 })
 
+// Validation rules
+const rules = {
+  required: validationRules.required,
+  positiveNumber: validationRules.positiveNumber,
+  positiveInteger: validationRules.positiveInteger,
+  maxLength: validationRules.maxLength
+}
+
 // Timer display with persistent calculation
 const timerDisplay = computed(() => {
-  const timer = timerStore.activeTimers.feed
+  const timer = timerStore.getActiveTimer('feed')
   if (!timer) return '00:00'
-  
-  const elapsed = timerStore.getTimerDuration('feed')
-  const minutes = Math.floor(elapsed / 60)
-  const seconds = elapsed % 60
-  return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`
+  return timerStore.getFormattedDuration('feed')
 })
 
-// Watch for active timer changes (handles persistence restore)
-watch(() => timerStore.activeTimers.feed, (newTimer) => {
-  if (newTimer) {
-    useTimer.value = true
-    // Update form data to match timer activity type if available
+// Watch for active timer changes
+watch(() => timerStore.hasActiveTimer('feed'), (hasTimer) => {
+  useTimer.value = hasTimer
+  if (hasTimer) {
     startTimerDisplay()
   } else {
-    useTimer.value = false
-    if (timerInterval.value) {
-      clearInterval(timerInterval.value)
-    }
+    stopTimerDisplay()
   }
 }, { immediate: true })
 
-onMounted(() => {
-  // Timer state is handled by the watcher
-})
-
 onUnmounted(() => {
-  if (timerInterval.value) {
-    clearInterval(timerInterval.value)
-  }
+  stopTimerDisplay()
 })
 
-// Start timer display update
+// Timer display management
 function startTimerDisplay() {
   if (timerInterval.value) {
     clearInterval(timerInterval.value)
   }
   timerInterval.value = setInterval(() => {
-    // Force reactivity update - the computed will recalculate
+    // Force reactivity update
   }, 1000)
+}
+
+function stopTimerDisplay() {
+  if (timerInterval.value) {
+    clearInterval(timerInterval.value)
+    timerInterval.value = null
+  }
 }
 
 // Start timer
 async function startTimer() {
-  loading.value = true
-  formError.value = null
-  
-  const result = await activityStore.startTimer('feed', {
-    feed_data: {
-      feed_type: formData.value.feed_type
-    },
-    notes: formData.value.notes
+  const result = await withErrorHandling(async () => {
+    const response = await activityStore.startTimer('feed', {
+      feed_data: {
+        feed_type: formData.value.feed_type
+      },
+      notes: formData.value.notes
+    })
+    
+    if (!response.success) {
+      throw new Error(response.error)
+    }
+    
+    const success = timerStore.startTimer('feed', response.data.id)
+    if (!success) {
+      throw new Error('Failed to start local timer')
+    }
+    
+    return response.data
   })
   
-  if (result.success) {
-    timerStore.startTimer('feed', result.data.id)
-    // Timer state will be updated by the watcher
-  } else {
-    formError.value = result.error || 'Failed to start timer'
+  if (!result.success) {
+    handleError({
+      title: 'Timer Start Failed',
+      message: result.error
+    })
   }
-  
-  loading.value = false
 }
 
 // Stop timer
 async function stopTimer() {
-  loading.value = true
-  formError.value = null
-  
-  const timer = timerStore.activeTimers.feed
-  if (!timer || !timer.activityId) {
-    formError.value = 'No active timer found'
-    loading.value = false
+  const timer = timerStore.getActiveTimer('feed')
+  if (!timer?.activityId) {
+    handleError({
+      title: 'Timer Error',
+      message: 'No active timer found'
+    })
     return
   }
   
-  const data = {}
-  if (formData.value.feed_type === 'bottle' && formData.value.amount_ml) {
-    data.amount_ml = formData.value.amount_ml
-  }
-  if (formData.value.notes) {
-    data.notes = formData.value.notes
-  }
-  
-  const result = await activityStore.stopTimer(timer.activityId, data)
+  const result = await withErrorHandling(async () => {
+    const stopData = {}
+    if (formData.value.feed_type === 'bottle' && formData.value.amount_ml) {
+      stopData.amount_ml = formData.value.amount_ml
+    }
+    if (formData.value.notes) {
+      stopData.notes = formData.value.notes
+    }
+    
+    const response = await activityStore.stopTimer(timer.activityId, stopData)
+    if (!response.success) {
+      throw new Error(response.error)
+    }
+    
+    timerStore.stopTimer('feed')
+    return response.data
+  })
   
   if (result.success) {
-    timerStore.stopTimer('feed')
     emit('success', result.data)
-  } else {
-    formError.value = result.error || 'Failed to stop timer'
   }
-  
-  loading.value = false
 }
 
 // Submit form
 async function handleSubmit() {
-  loading.value = true
-  formError.value = null
+  // Validate form
+  const { valid } = await form.value.validate()
+  if (!valid) return
   
-  const activityDateTime = combineDateAndTime(formData.value.date, formData.value.time)
+  // Custom validation for date/time
+  const dateTimeError = validateDateTime(formData.value.date, formData.value.time)
+  if (dateTimeError) {
+    handleError({
+      title: 'Invalid Date/Time',
+      message: dateTimeError
+    })
+    return
+  }
   
-  const activityData = {
-    type: 'feed',
-    start_time: activityDateTime,
-    notes: formData.value.notes,
-    feed_data: {
-      feed_type: formData.value.feed_type
+  const result = await withErrorHandling(async () => {
+    const activityDateTime = combineDateAndTime(formData.value.date, formData.value.time)
+    
+    const activityData = {
+      type: 'feed',
+      start_time: activityDateTime,
+      notes: formData.value.notes,
+      feed_data: {
+        feed_type: formData.value.feed_type
+      }
     }
-  }
-  
-  if (formData.value.feed_type === 'bottle' && formData.value.amount_ml) {
-    activityData.feed_data.amount_ml = formData.value.amount_ml
-  }
-  
-  if (formData.value.feed_type !== 'bottle' && formData.value.duration_minutes) {
-    activityData.feed_data.duration_minutes = formData.value.duration_minutes
-    // Calculate end time
-    activityData.end_time = new Date(activityDateTime.getTime() + formData.value.duration_minutes * 60000)
-  }
-  
-  const result = await activityStore.createActivity(activityData)
+    
+    if (formData.value.feed_type === 'bottle' && formData.value.amount_ml) {
+      activityData.feed_data.amount_ml = formData.value.amount_ml
+    }
+    
+    if (formData.value.feed_type !== 'bottle' && formData.value.duration_minutes) {
+      activityData.feed_data.duration_minutes = formData.value.duration_minutes
+      activityData.end_time = new Date(activityDateTime.getTime() + formData.value.duration_minutes * 60000)
+    }
+    
+    const response = await activityStore.createActivity(activityData)
+    if (!response.success) {
+      throw new Error(response.error)
+    }
+    
+    return response.data
+  })
   
   if (result.success) {
     emit('success', result.data)
-  } else {
-    formError.value = result.error || 'Failed to save activity'
   }
-  
-  loading.value = false
 }
 </script>

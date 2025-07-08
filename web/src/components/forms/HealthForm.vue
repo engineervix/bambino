@@ -7,6 +7,7 @@
       label="Type"
       variant="outlined"
       density="compact"
+      :rules="[rules.required]"
       class="mb-4"
     />
 
@@ -19,6 +20,7 @@
           type="date"
           variant="outlined"
           density="compact"
+          :rules="[rules.required]"
         />
       </v-col>
       <v-col cols="5">
@@ -28,6 +30,7 @@
           type="time"
           variant="outlined"
           density="compact"
+          :rules="[rules.required]"
         />
       </v-col>
     </v-row>
@@ -38,6 +41,8 @@
       label="Provider/Location"
       variant="outlined"
       density="compact"
+      :rules="[rules.maxLength(100)]"
+      placeholder="Dr. Smith, City Hospital, etc."
       class="mb-4"
     />
 
@@ -49,8 +54,9 @@
           label="Vaccine Name"
           variant="outlined"
           density="compact"
+          :rules="[rules.required, rules.maxLength(100)]"
+          placeholder="DTaP, Rotavirus, etc."
           class="mb-4"
-          :rules="[v => !!v || 'Vaccine name is required']"
         />
       </div>
     </v-expand-transition>
@@ -64,6 +70,8 @@
           variant="outlined"
           rows="2"
           density="compact"
+          :rules="[rules.maxLength(500)]"
+          placeholder="Fever, cough, runny nose, etc."
           class="mb-3"
         />
         
@@ -73,6 +81,8 @@
           variant="outlined"
           rows="2"
           density="compact"
+          :rules="[rules.maxLength(500)]"
+          placeholder="Medication, rest, monitoring, etc."
           class="mb-4"
         />
       </div>
@@ -85,19 +95,22 @@
       variant="outlined"
       rows="2"
       density="compact"
+      :rules="[rules.maxLength(1000)]"
+      placeholder="Additional notes, observations, follow-up instructions..."
       class="mb-4"
     />
 
-    <!-- Error display -->
+    <!-- Standardized error display -->
     <v-alert
       v-if="formError"
       type="error"
       variant="tonal"
       class="mb-4"
       closable
-      @click:close="formError = null"
+      @click:close="clearFormError"
     >
-      {{ formError }}
+      <div v-if="formError.title" class="font-weight-medium mb-1">{{ formError.title }}</div>
+      <div>{{ formError.message || formError }}</div>
     </v-alert>
 
     <!-- Submit button -->
@@ -105,26 +118,32 @@
       type="submit"
       color="primary"
       :loading="loading"
+      :disabled="loading"
       block
     >
+      <v-icon start>{{ getRecordIcon() }}</v-icon>
       Save Health Record
     </v-btn>
   </v-form>
 </template>
 
 <script setup>
-import { ref, watch } from 'vue'
+import { ref, watch, computed } from 'vue'
 import { useActivityStore } from '@/stores/activity'
+import { useErrorHandling } from '@/composables/useErrorHandling'
 import { combineDateAndTime, getCurrentDate, getCurrentTime } from '@/utils/datetime'
+import { validationRules, validateDateTime } from '@/utils/validation'
 
 const emit = defineEmits(['success', 'cancel'])
 
+// Stores
 const activityStore = useActivityStore()
+
+// Error handling
+const { error: formError, loading, handleError, clearError: clearFormError, withErrorHandling } = useErrorHandling()
 
 // Form state
 const form = ref(null)
-const loading = ref(false)
-const formError = ref(null)
 const formData = ref({
   record_type: 'checkup',
   date: getCurrentDate(),
@@ -136,12 +155,33 @@ const formData = ref({
   notes: ''
 })
 
+// Validation rules
+const rules = {
+  required: validationRules.required,
+  maxLength: validationRules.maxLength
+}
+
 // Record type options
 const recordTypes = [
   { title: 'Checkup', value: 'checkup' },
   { title: 'Vaccine', value: 'vaccine' },
   { title: 'Illness', value: 'illness' }
 ]
+
+// Get appropriate icon for the record type
+const getRecordIcon = computed(() => {
+  return () => {
+    switch (formData.value.record_type) {
+      case 'vaccine':
+        return 'mdi-needle'
+      case 'illness':
+        return 'mdi-thermometer'
+      case 'checkup':
+      default:
+        return 'mdi-stethoscope'
+    }
+  }
+})
 
 // Clear type-specific fields when record type changes
 watch(() => formData.value.record_type, (newType) => {
@@ -156,45 +196,65 @@ watch(() => formData.value.record_type, (newType) => {
 
 // Submit form
 async function handleSubmit() {
+  // Validate form
   const { valid } = await form.value.validate()
   if (!valid) return
-
-  loading.value = true
-  formError.value = null
   
-  const activityDateTime = combineDateAndTime(formData.value.date, formData.value.time)
-  
-  const activityData = {
-    type: 'health',
-    start_time: activityDateTime,
-    notes: formData.value.notes,
-    health_data: {
-      record_type: formData.value.record_type,
-      provider: formData.value.provider
-    }
+  // Custom validation for vaccine records
+  if (formData.value.record_type === 'vaccine' && !formData.value.vaccine_name.trim()) {
+    handleError({
+      title: 'Missing Vaccine Information',
+      message: 'Vaccine name is required for vaccine records'
+    })
+    return
   }
   
-  if (formData.value.record_type === 'vaccine' && formData.value.vaccine_name) {
-    activityData.health_data.vaccine_name = formData.value.vaccine_name
+  // Validate date/time
+  const dateTimeError = validateDateTime(formData.value.date, formData.value.time)
+  if (dateTimeError) {
+    handleError({
+      title: 'Invalid Date/Time',
+      message: dateTimeError
+    })
+    return
   }
   
-  if (formData.value.record_type === 'illness') {
-    if (formData.value.symptoms) {
-      activityData.health_data.symptoms = formData.value.symptoms
+  const result = await withErrorHandling(async () => {
+    const activityDateTime = combineDateAndTime(formData.value.date, formData.value.time)
+    
+    const activityData = {
+      type: 'health',
+      start_time: activityDateTime,
+      notes: formData.value.notes,
+      health_data: {
+        record_type: formData.value.record_type,
+        provider: formData.value.provider
+      }
     }
-    if (formData.value.treatment) {
-      activityData.health_data.treatment = formData.value.treatment
+    
+    if (formData.value.record_type === 'vaccine' && formData.value.vaccine_name) {
+      activityData.health_data.vaccine_name = formData.value.vaccine_name
     }
-  }
-  
-  const result = await activityStore.createActivity(activityData)
+    
+    if (formData.value.record_type === 'illness') {
+      if (formData.value.symptoms) {
+        activityData.health_data.symptoms = formData.value.symptoms
+      }
+      if (formData.value.treatment) {
+        activityData.health_data.treatment = formData.value.treatment
+      }
+    }
+    
+    const response = await activityStore.createActivity(activityData)
+    if (!response.success) {
+      throw new Error(response.error)
+    }
+    
+    return response.data
+  })
   
   if (result.success) {
     emit('success', result.data)
-  } else {
-    formError.value = result.error || 'Failed to save health record'
   }
-  
-  loading.value = false
 }
 </script>

@@ -9,6 +9,7 @@
           type="date"
           variant="outlined"
           density="compact"
+          :rules="[rules.required]"
         />
       </v-col>
       <v-col cols="5">
@@ -18,6 +19,7 @@
           type="time"
           variant="outlined"
           density="compact"
+          :rules="[rules.required]"
         />
       </v-col>
     </v-row>
@@ -44,6 +46,17 @@
             />
           </v-col>
         </v-row>
+        
+        <!-- Validation message for diaper type -->
+        <v-alert
+          v-if="!formData.wet && !formData.dirty && showDiaperTypeError"
+          type="warning"
+          variant="tonal"
+          density="compact"
+          class="mt-2"
+        >
+          Please select wet, dirty, or both
+        </v-alert>
       </v-card-text>
     </v-card>
 
@@ -79,19 +92,21 @@
       variant="outlined"
       rows="2"
       density="compact"
+      :rules="[rules.maxLength(1000)]"
       class="mb-4"
     />
 
-    <!-- Error display -->
+    <!-- Standardized error display -->
     <v-alert
       v-if="formError"
       type="error"
       variant="tonal"
       class="mb-4"
       closable
-      @click:close="formError = null"
+      @click:close="clearFormError"
     >
-      {{ formError }}
+      <div v-if="formError.title" class="font-weight-medium mb-1">{{ formError.title }}</div>
+      <div>{{ formError.message || formError }}</div>
     </v-alert>
 
     <!-- Submit button -->
@@ -99,7 +114,7 @@
       type="submit"
       color="primary"
       :loading="loading"
-      :disabled="!formData.wet && !formData.dirty"
+      :disabled="loading || (!formData.wet && !formData.dirty)"
       block
     >
       Save
@@ -110,16 +125,21 @@
 <script setup>
 import { ref, watch } from 'vue'
 import { useActivityStore } from '@/stores/activity'
+import { useErrorHandling } from '@/composables/useErrorHandling'
 import { combineDateAndTime, getCurrentDate, getCurrentTime } from '@/utils/datetime'
+import { validationRules, validateDateTime } from '@/utils/validation'
 
 const emit = defineEmits(['success', 'cancel'])
 
+// Stores
 const activityStore = useActivityStore()
+
+// Error handling
+const { error: formError, loading, handleError, clearError: clearFormError, withErrorHandling } = useErrorHandling()
 
 // Form state
 const form = ref(null)
-const loading = ref(false)
-const formError = ref(null)
+const showDiaperTypeError = ref(false)
 const formData = ref({
   date: getCurrentDate(),
   time: getCurrentTime(),
@@ -129,6 +149,12 @@ const formData = ref({
   consistency: null,
   notes: ''
 })
+
+// Validation rules
+const rules = {
+  required: validationRules.required,
+  maxLength: validationRules.maxLength
+}
 
 // Options
 const colorOptions = [
@@ -155,43 +181,73 @@ watch(() => formData.value.dirty, (isDirty) => {
   }
 })
 
+// Hide diaper type error when user makes a selection
+watch([() => formData.value.wet, () => formData.value.dirty], () => {
+  if (formData.value.wet || formData.value.dirty) {
+    showDiaperTypeError.value = false
+  }
+})
+
 // Submit form
 async function handleSubmit() {
+  // Reset error indicators
+  showDiaperTypeError.value = false
+  
+  // Validate form
+  const { valid } = await form.value.validate()
+  if (!valid) return
+  
+  // Custom validation for diaper type
   if (!formData.value.wet && !formData.value.dirty) {
+    showDiaperTypeError.value = true
+    handleError({
+      title: 'Invalid Selection',
+      message: 'Please select wet, dirty, or both'
+    })
     return
   }
-
-  loading.value = true
-  formError.value = null
   
-  const activityDateTime = combineDateAndTime(formData.value.date, formData.value.time)
+  // Validate date/time
+  const dateTimeError = validateDateTime(formData.value.date, formData.value.time)
+  if (dateTimeError) {
+    handleError({
+      title: 'Invalid Date/Time',
+      message: dateTimeError
+    })
+    return
+  }
   
-  const activityData = {
-    type: 'diaper',
-    start_time: activityDateTime,
-    notes: formData.value.notes,
-    diaper_data: {
-      wet: formData.value.wet,
-      dirty: formData.value.dirty
+  const result = await withErrorHandling(async () => {
+    const activityDateTime = combineDateAndTime(formData.value.date, formData.value.time)
+    
+    const activityData = {
+      type: 'diaper',
+      start_time: activityDateTime,
+      notes: formData.value.notes,
+      diaper_data: {
+        wet: formData.value.wet,
+        dirty: formData.value.dirty
+      }
     }
-  }
-  
-  if (formData.value.color) {
-    activityData.diaper_data.color = formData.value.color
-  }
-  
-  if (formData.value.consistency) {
-    activityData.diaper_data.consistency = formData.value.consistency
-  }
-  
-  const result = await activityStore.createActivity(activityData)
+    
+    if (formData.value.color) {
+      activityData.diaper_data.color = formData.value.color
+    }
+    
+    if (formData.value.consistency) {
+      activityData.diaper_data.consistency = formData.value.consistency
+    }
+    
+    const response = await activityStore.createActivity(activityData)
+    if (!response.success) {
+      throw new Error(response.error)
+    }
+    
+    return response.data
+  })
   
   if (result.success) {
     emit('success', result.data)
-  } else {
-    formError.value = result.error || 'Failed to save activity'
   }
-  
-  loading.value = false
 }
 </script>

@@ -12,6 +12,7 @@
               type="date"
               variant="outlined"
               density="compact"
+              :rules="[rules.required]"
             />
           </v-col>
           <v-col cols="5">
@@ -21,45 +22,60 @@
               type="time"
               variant="outlined"
               density="compact"
+              :rules="[rules.required]"
             />
           </v-col>
         </v-row>
 
         <!-- End date and time (optional) -->
-        <v-row v-if="showEndTime">
-          <v-col cols="7">
-            <v-text-field
-              v-model="formData.endDate"
-              label="End Date"
-              type="date"
-              variant="outlined"
-              density="compact"
-            />
-          </v-col>
-          <v-col cols="5">
-            <v-text-field
-              v-model="formData.endTime"
-              label="End Time"
-              type="time"
-              variant="outlined"
-              density="compact"
-              clearable
-              @click:clear="clearEndTime"
-            />
-          </v-col>
-        </v-row>
+        <v-expand-transition>
+          <v-row v-if="showEndTime" class="mb-3">
+            <v-col cols="7">
+              <v-text-field
+                v-model="formData.endDate"
+                label="End Date"
+                type="date"
+                variant="outlined"
+                density="compact"
+              />
+            </v-col>
+            <v-col cols="5">
+              <v-text-field
+                v-model="formData.endTime"
+                label="End Time"
+                type="time"
+                variant="outlined"
+                density="compact"
+                clearable
+                @click:clear="clearEndTime"
+              />
+            </v-col>
+          </v-row>
+        </v-expand-transition>
 
         <!-- Toggle for end time -->
-        <v-btn
-          v-if="!showEndTime"
-          variant="outlined"
-          size="small"
-          @click="enableEndTime"
-          class="mb-3"
-        >
-          <v-icon start>mdi-clock-plus</v-icon>
-          Add End Time
-        </v-btn>
+        <div class="d-flex justify-space-between align-center mb-3">
+          <v-btn
+            v-if="!showEndTime"
+            variant="outlined"
+            size="small"
+            @click="enableEndTime"
+          >
+            <v-icon start>mdi-clock-plus</v-icon>
+            Add End Time
+          </v-btn>
+          
+          <v-btn
+            v-else
+            variant="text"
+            size="small"
+            color="error"
+            @click="clearEndTime"
+          >
+            <v-icon start>mdi-close</v-icon>
+            Remove End Time
+          </v-btn>
+        </div>
       </v-card-text>
     </v-card>
 
@@ -83,17 +99,22 @@
     />
 
     <!-- Quality (only if ending sleep or manual entry with end time) -->
-    <v-card v-if="useTimer || showEndTime" variant="outlined" class="mb-4">
-      <v-card-text>
-        <p class="text-body-2 mb-2">Sleep Quality</p>
-        <v-rating
-          v-model="formData.quality"
-          color="yellow-darken-2"
-          hover
-          size="large"
-        />
-      </v-card-text>
-    </v-card>
+    <v-expand-transition>
+      <v-card v-if="useTimer || showEndTime" variant="outlined" class="mb-4">
+        <v-card-text>
+          <p class="text-body-2 mb-2">Sleep Quality</p>
+          <v-rating
+            v-model="formData.quality"
+            color="yellow-darken-2"
+            hover
+            size="large"
+          />
+          <div class="text-caption text-center mt-1">
+            {{ qualityLabels[formData.quality - 1] || 'Not rated' }}
+          </div>
+        </v-card-text>
+      </v-card>
+    </v-expand-transition>
 
     <!-- Notes -->
     <v-textarea
@@ -102,19 +123,21 @@
       variant="outlined"
       rows="2"
       density="compact"
+      :rules="[rules.maxLength(1000)]"
       class="mb-4"
     />
 
-    <!-- Error display -->
+    <!-- Standardized error display -->
     <v-alert
       v-if="formError"
       type="error"
       variant="tonal"
       class="mb-4"
       closable
-      @click:close="formError = null"
+      @click:close="clearFormError"
     >
-      {{ formError }}
+      <div v-if="formError.title" class="font-weight-medium mb-1">{{ formError.title }}</div>
+      <div>{{ formError.message || formError }}</div>
     </v-alert>
 
     <!-- Actions -->
@@ -125,6 +148,7 @@
         color="sleep"
         @click="startTimer"
         :loading="loading"
+        :disabled="loading"
         block
       >
         <v-icon start>mdi-timer</v-icon>
@@ -136,6 +160,7 @@
         color="success"
         @click="stopTimer"
         :loading="loading"
+        :disabled="loading"
         block
       >
         <v-icon start>mdi-stop</v-icon>
@@ -147,6 +172,7 @@
         type="submit"
         color="primary"
         :loading="loading"
+        :disabled="loading"
         block
       >
         Save
@@ -156,10 +182,12 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
+import { ref, computed, onUnmounted, watch } from 'vue'
 import { useTimerStore } from '@/stores/timer'
 import { useActivityStore } from '@/stores/activity'
+import { useErrorHandling } from '@/composables/useErrorHandling'
 import { combineDateAndTime, getCurrentDate, getCurrentTime } from '@/utils/datetime'
+import { validationRules, validateDateTime } from '@/utils/validation'
 
 const props = defineProps({
   hasTimer: {
@@ -170,13 +198,15 @@ const props = defineProps({
 
 const emit = defineEmits(['success', 'cancel'])
 
+// Stores
 const timerStore = useTimerStore()
 const activityStore = useActivityStore()
 
+// Error handling
+const { error: formError, loading, handleError, clearError: clearFormError, withErrorHandling } = useErrorHandling()
+
 // Form state
 const form = ref(null)
-const loading = ref(false)
-const formError = ref(null)
 const useTimer = ref(false)
 const timerInterval = ref(null)
 const showEndTime = ref(false)
@@ -190,6 +220,12 @@ const formData = ref({
   notes: ''
 })
 
+// Validation rules
+const rules = {
+  required: validationRules.required,
+  maxLength: validationRules.maxLength
+}
+
 // Location options
 const locationOptions = [
   { title: 'Crib', value: 'crib' },
@@ -200,52 +236,51 @@ const locationOptions = [
   { title: 'Other', value: 'other' }
 ]
 
+// Quality labels
+const qualityLabels = [
+  'Poor',
+  'Fair', 
+  'Good',
+  'Very Good',
+  'Excellent'
+]
+
 // Timer display with persistent calculation - shows hours for longer sleeps
 const timerDisplay = computed(() => {
-  const timer = timerStore.activeTimers.sleep
+  const timer = timerStore.getActiveTimer('sleep')
   if (!timer) return '00:00'
-  
-  const elapsed = timerStore.getTimerDuration('sleep')
-  const hours = Math.floor(elapsed / 3600)
-  const minutes = Math.floor((elapsed % 3600) / 60)
-  
-  if (hours > 0) {
-    return `${hours}h ${minutes}m`
-  }
-  return `${minutes} min`
+  return timerStore.getFormattedDuration('sleep')
 })
 
-// Watch for active timer changes (handles persistence restore)
-watch(() => timerStore.activeTimers.sleep, (newTimer) => {
-  if (newTimer) {
-    useTimer.value = true
+// Watch for active timer changes
+watch(() => timerStore.hasActiveTimer('sleep'), (hasTimer) => {
+  useTimer.value = hasTimer
+  if (hasTimer) {
     startTimerDisplay()
   } else {
-    useTimer.value = false
-    if (timerInterval.value) {
-      clearInterval(timerInterval.value)
-    }
+    stopTimerDisplay()
   }
 }, { immediate: true })
 
-onMounted(() => {
-  // Timer state is handled by the watcher
-})
-
 onUnmounted(() => {
-  if (timerInterval.value) {
-    clearInterval(timerInterval.value)
-  }
+  stopTimerDisplay()
 })
 
-// Start timer display update
+// Timer display management
 function startTimerDisplay() {
   if (timerInterval.value) {
     clearInterval(timerInterval.value)
   }
   timerInterval.value = setInterval(() => {
-    // Force reactivity update - the computed will recalculate
+    // Force reactivity update
   }, 1000)
+}
+
+function stopTimerDisplay() {
+  if (timerInterval.value) {
+    clearInterval(timerInterval.value)
+    timerInterval.value = null
+  }
 }
 
 // Enable end time input
@@ -253,6 +288,11 @@ function enableEndTime() {
   showEndTime.value = true
   // Set end time to current time as default
   formData.value.endTime = getCurrentTime()
+  // If it's a different day, update end date
+  const now = new Date()
+  if (now.toDateString() !== new Date(formData.value.startDate).toDateString()) {
+    formData.value.endDate = getCurrentDate()
+  }
 }
 
 // Clear end time
@@ -263,97 +303,139 @@ function clearEndTime() {
 
 // Start timer
 async function startTimer() {
-  loading.value = true
-  formError.value = null
-  
-  const result = await activityStore.startTimer('sleep', {
-    sleep_data: {
-      location: formData.value.location
-    },
-    notes: formData.value.notes
+  const result = await withErrorHandling(async () => {
+    const response = await activityStore.startTimer('sleep', {
+      sleep_data: {
+        location: formData.value.location
+      },
+      notes: formData.value.notes
+    })
+    
+    if (!response.success) {
+      throw new Error(response.error)
+    }
+    
+    const success = timerStore.startTimer('sleep', response.data.id)
+    if (!success) {
+      throw new Error('Failed to start local timer')
+    }
+    
+    return response.data
   })
   
-  if (result.success) {
-    timerStore.startTimer('sleep', result.data.id)
-  } else {
-    formError.value = result.error || 'Failed to start timer'
+  if (!result.success) {
+    handleError({
+      title: 'Timer Start Failed',
+      message: result.error
+    })
   }
-  
-  loading.value = false
 }
 
 // Stop timer
 async function stopTimer() {
-  loading.value = true
-  formError.value = null
-  
-  const timer = timerStore.activeTimers.sleep
-  if (!timer || !timer.activityId) {
-    formError.value = 'No active timer found'
-    loading.value = false
+  const timer = timerStore.getActiveTimer('sleep')
+  if (!timer?.activityId) {
+    handleError({
+      title: 'Timer Error',
+      message: 'No active timer found'
+    })
     return
   }
   
-  const data = {}
-  if (formData.value.quality) {
-    data.quality = formData.value.quality
-  }
-  if (formData.value.notes) {
-    data.notes = formData.value.notes
-  }
-  
-  const result = await activityStore.stopTimer(timer.activityId, data)
+  const result = await withErrorHandling(async () => {
+    const stopData = {}
+    if (formData.value.quality) {
+      stopData.quality = formData.value.quality
+    }
+    if (formData.value.notes) {
+      stopData.notes = formData.value.notes
+    }
+    
+    const response = await activityStore.stopTimer(timer.activityId, stopData)
+    if (!response.success) {
+      throw new Error(response.error)
+    }
+    
+    timerStore.stopTimer('sleep')
+    return response.data
+  })
   
   if (result.success) {
-    timerStore.stopTimer('sleep')
     emit('success', result.data)
-  } else {
-    formError.value = result.error || 'Failed to stop timer'
   }
-  
-  loading.value = false
 }
 
 // Submit form
 async function handleSubmit() {
-  loading.value = true
-  formError.value = null
+  // Validate form
+  const { valid } = await form.value.validate()
+  if (!valid) return
   
-  const startDateTime = combineDateAndTime(formData.value.startDate, formData.value.startTime)
-  
-  const activityData = {
-    type: 'sleep',
-    start_time: startDateTime,
-    notes: formData.value.notes,
-    sleep_data: {
-      location: formData.value.location
-    }
+  // Validate start date/time
+  const startDateTimeError = validateDateTime(formData.value.startDate, formData.value.startTime)
+  if (startDateTimeError) {
+    handleError({
+      title: 'Invalid Start Time',
+      message: startDateTimeError
+    })
+    return
   }
   
+  // Validate end date/time if provided
   if (showEndTime.value && formData.value.endTime) {
-    const endDateTime = combineDateAndTime(formData.value.endDate, formData.value.endTime)
-    
-    // Validate end time is after start time
-    if (endDateTime <= startDateTime) {
-      formError.value = 'End time must be after start time'
-      loading.value = false
+    const endDateTimeError = validateDateTime(formData.value.endDate, formData.value.endTime)
+    if (endDateTimeError) {
+      handleError({
+        title: 'Invalid End Time',
+        message: endDateTimeError
+      })
       return
     }
     
-    activityData.end_time = endDateTime
-    if (formData.value.quality) {
-      activityData.sleep_data.quality = formData.value.quality
+    // Check that end is after start
+    const startDateTime = combineDateAndTime(formData.value.startDate, formData.value.startTime)
+    const endDateTime = combineDateAndTime(formData.value.endDate, formData.value.endTime)
+    
+    if (endDateTime <= startDateTime) {
+      handleError({
+        title: 'Invalid Time Range',
+        message: 'End time must be after start time'
+      })
+      return
     }
   }
   
-  const result = await activityStore.createActivity(activityData)
+  const result = await withErrorHandling(async () => {
+    const startDateTime = combineDateAndTime(formData.value.startDate, formData.value.startTime)
+    
+    const activityData = {
+      type: 'sleep',
+      start_time: startDateTime,
+      notes: formData.value.notes,
+      sleep_data: {
+        location: formData.value.location
+      }
+    }
+    
+    if (showEndTime.value && formData.value.endTime) {
+      const endDateTime = combineDateAndTime(formData.value.endDate, formData.value.endTime)
+      activityData.end_time = endDateTime
+      
+      if (formData.value.quality) {
+        activityData.sleep_data.quality = formData.value.quality
+      }
+    }
+    
+    const response = await activityStore.createActivity(activityData)
+    if (!response.success) {
+      throw new Error(response.error)
+    }
+    
+    return response.data
+  })
   
   if (result.success) {
     emit('success', result.data)
-  } else {
-    formError.value = result.error || 'Failed to save activity'
   }
-  
-  loading.value = false
 }
 </script>

@@ -7,6 +7,7 @@
       type="date"
       variant="outlined"
       density="compact"
+      :rules="[rules.required]"
       class="mb-4"
     />
 
@@ -24,8 +25,9 @@
           variant="outlined"
           density="compact"
           append-inner-icon="mdi-scale"
+          :rules="[rules.positiveNumber]"
           class="mb-3"
-          :rules="[v => v > 0 || !v || 'Weight must be positive']"
+          placeholder="e.g., 7.5"
         />
         
         <!-- Height -->
@@ -37,8 +39,9 @@
           variant="outlined"
           density="compact"
           append-inner-icon="mdi-human-male-height"
+          :rules="[rules.positiveNumber]"
           class="mb-3"
-          :rules="[v => v > 0 || !v || 'Height must be positive']"
+          placeholder="e.g., 65.5"
         />
         
         <!-- Head circumference -->
@@ -50,8 +53,20 @@
           variant="outlined"
           density="compact"
           append-inner-icon="mdi-head"
-          :rules="[v => v > 0 || !v || 'Head circumference must be positive']"
+          :rules="[rules.positiveNumber]"
+          placeholder="e.g., 42.0"
         />
+        
+        <!-- At least one measurement required message -->
+        <v-alert
+          v-if="!hasAnyMeasurement && showMeasurementError"
+          type="warning"
+          variant="tonal"
+          density="compact"
+          class="mt-2"
+        >
+          Please provide at least one measurement
+        </v-alert>
       </v-card-text>
     </v-card>
 
@@ -62,19 +77,22 @@
       variant="outlined"
       rows="2"
       density="compact"
+      :rules="[rules.maxLength(1000)]"
+      placeholder="Doctor visit notes, growth observations, etc."
       class="mb-4"
     />
 
-    <!-- Error display -->
+    <!-- Standardized error display -->
     <v-alert
       v-if="formError"
       type="error"
       variant="tonal"
       class="mb-4"
       closable
-      @click:close="formError = null"
+      @click:close="clearFormError"
     >
-      {{ formError }}
+      <div v-if="formError.title" class="font-weight-medium mb-1">{{ formError.title }}</div>
+      <div>{{ formError.message || formError }}</div>
     </v-alert>
 
     <!-- Submit button -->
@@ -82,27 +100,33 @@
       type="submit"
       color="primary"
       :loading="loading"
-      :disabled="!hasAnyMeasurement"
+      :disabled="loading || !hasAnyMeasurement"
       block
     >
+      <v-icon start>mdi-chart-line</v-icon>
       Save Measurements
     </v-btn>
   </v-form>
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { useActivityStore } from '@/stores/activity'
+import { useErrorHandling } from '@/composables/useErrorHandling'
 import { getCurrentDate } from '@/utils/datetime'
+import { validationRules, validateAtLeastOne } from '@/utils/validation'
 
 const emit = defineEmits(['success', 'cancel'])
 
+// Stores
 const activityStore = useActivityStore()
+
+// Error handling
+const { error: formError, loading, handleError, clearError: clearFormError, withErrorHandling } = useErrorHandling()
 
 // Form state
 const form = ref(null)
-const loading = ref(false)
-const formError = ref(null)
+const showMeasurementError = ref(false)
 const formData = ref({
   date: getCurrentDate(),
   weight_kg: null,
@@ -111,6 +135,13 @@ const formData = ref({
   notes: ''
 })
 
+// Validation rules
+const rules = {
+  required: validationRules.required,
+  positiveNumber: validationRules.positiveNumber,
+  maxLength: validationRules.maxLength
+}
+
 // Check if at least one measurement is provided
 const hasAnyMeasurement = computed(() => {
   return formData.value.weight_kg || 
@@ -118,49 +149,98 @@ const hasAnyMeasurement = computed(() => {
          formData.value.head_circumference_cm
 })
 
+// Hide measurement error when user provides a measurement
+watch(() => hasAnyMeasurement.value, (hasValue) => {
+  if (hasValue) {
+    showMeasurementError.value = false
+  }
+})
+
 // Submit form
 async function handleSubmit() {
-  if (!hasAnyMeasurement.value) {
-    return
-  }
-
+  // Reset error indicators
+  showMeasurementError.value = false
+  
+  // Validate form
   const { valid } = await form.value.validate()
   if (!valid) return
-
-  loading.value = true
-  formError.value = null
   
-  // Growth measurements typically happen at a consistent time (like doctor visits)
-  // so we'll set it to noon on the selected date
-  const activityDateTime = new Date(`${formData.value.date}T12:00:00`)
-  
-  const activityData = {
-    type: 'growth',
-    start_time: activityDateTime,
-    notes: formData.value.notes,
-    growth_data: {}
+  // Check if at least one measurement is provided
+  if (!hasAnyMeasurement.value) {
+    showMeasurementError.value = true
+    handleError({
+      title: 'Missing Measurements',
+      message: 'Please provide at least one measurement (weight, height, or head circumference)'
+    })
+    return
   }
   
-  if (formData.value.weight_kg) {
-    activityData.growth_data.weight_kg = formData.value.weight_kg
+  // Validate that provided measurements are reasonable
+  const validationError = validateMeasurements()
+  if (validationError) {
+    handleError({
+      title: 'Invalid Measurement',
+      message: validationError
+    })
+    return
   }
   
-  if (formData.value.height_cm) {
-    activityData.growth_data.height_cm = formData.value.height_cm
-  }
-  
-  if (formData.value.head_circumference_cm) {
-    activityData.growth_data.head_circumference_cm = formData.value.head_circumference_cm
-  }
-  
-  const result = await activityStore.createActivity(activityData)
+  const result = await withErrorHandling(async () => {
+    // Growth measurements typically happen at a consistent time (like doctor visits)
+    // so we'll set it to noon on the selected date
+    const activityDateTime = new Date(`${formData.value.date}T12:00:00`)
+    
+    const activityData = {
+      type: 'growth',
+      start_time: activityDateTime,
+      notes: formData.value.notes,
+      growth_data: {}
+    }
+    
+    if (formData.value.weight_kg) {
+      activityData.growth_data.weight_kg = formData.value.weight_kg
+    }
+    
+    if (formData.value.height_cm) {
+      activityData.growth_data.height_cm = formData.value.height_cm
+    }
+    
+    if (formData.value.head_circumference_cm) {
+      activityData.growth_data.head_circumference_cm = formData.value.head_circumference_cm
+    }
+    
+    const response = await activityStore.createActivity(activityData)
+    if (!response.success) {
+      throw new Error(response.error)
+    }
+    
+    return response.data
+  })
   
   if (result.success) {
     emit('success', result.data)
-  } else {
-    formError.value = result.error || 'Failed to save measurements'
+  }
+}
+
+// Validate measurement values are reasonable
+function validateMeasurements() {
+  const { weight_kg, height_cm, head_circumference_cm } = formData.value
+  
+  // Weight validation (reasonable range for babies/toddlers: 0.5kg - 50kg)
+  if (weight_kg && (weight_kg < 0.5 || weight_kg > 50)) {
+    return 'Weight should be between 0.5kg and 50kg'
   }
   
-  loading.value = false
+  // Height validation (reasonable range: 20cm - 150cm)
+  if (height_cm && (height_cm < 20 || height_cm > 150)) {
+    return 'Height should be between 20cm and 150cm'
+  }
+  
+  // Head circumference validation (reasonable range: 20cm - 60cm)
+  if (head_circumference_cm && (head_circumference_cm < 20 || head_circumference_cm > 60)) {
+    return 'Head circumference should be between 20cm and 60cm'
+  }
+  
+  return null
 }
 </script>
