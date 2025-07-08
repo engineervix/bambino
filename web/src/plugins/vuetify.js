@@ -14,6 +14,12 @@ export default createVuetify({
         colors: {
           primary: '#4CAF50',
           secondary: '#2196F3',
+          background: '#121212', // overall app background
+          surface: '#1E1E1E',    // cards, sheets, dialogs
+          accent1: '#FF9F45',    // warm accent used for highlights/charts
+          accent2: '#00BCD4',    // cool accent counterpart
+          success: '#4CAF50',    // semantic success
+          error: '#FF5252',      // semantic error
           feed: '#FFC107',
           pump: '#E91E63',
           diaper: '#795548',
