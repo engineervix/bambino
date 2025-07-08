@@ -1,9 +1,15 @@
 /* Global typography & spacing tweaks */
+:root {
+  /* https://github.com/system-fonts/modern-font-stacks?tab=readme-ov-file#neo-grotesque */
+  --app-font-stack: Inter, Roboto, "Helvetica Neue", "Arial Nova", "Nimbus Sans", Arial, sans-serif;
+}
+
 html {
   font-size: 15px; /* Slightly larger base font for readability */
 }
 
 body {
+  font-family: var(--app-font-stack);
   line-height: 1.4;
   -webkit-font-smoothing: antialiased;
   scroll-behavior: smooth;
