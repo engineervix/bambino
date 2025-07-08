@@ -31,8 +31,13 @@ apiClient.interceptors.response.use(
     if (error.response) {
       // Handle 401 Unauthorized
       if (error.response.status === 401) {
-        // Clear auth state and redirect to login
-        router.push('/login')
+        // Import auth store dynamically to avoid circular imports
+        import('@/stores/auth').then(({ useAuthStore }) => {
+          const authStore = useAuthStore()
+          // Clear auth state and redirect to login
+          authStore.clearAuthState()
+          router.push('/login')
+        })
       }
       
       // Return error with message from backend

@@ -10,6 +10,7 @@ export const useAuthStore = defineStore('auth', () => {
   const selectedBaby = ref(null)
   const loading = ref(false)
   const error = ref(null)
+  const authChecked = ref(false) // Track if we've done initial auth check
 
   // Getters
   const isAuthenticated = computed(() => !!user.value)
@@ -43,12 +44,14 @@ export const useAuthStore = defineStore('auth', () => {
       user.value = null
       babies.value = []
       selectedBaby.value = null
+      authChecked.value = false // Reset auth check state
       router.push('/login')
     } catch (err) {
       // Even if logout fails, clear local state
       user.value = null
       babies.value = []
       selectedBaby.value = null
+      authChecked.value = false
       router.push('/login')
     } finally {
       loading.value = false
@@ -63,13 +66,35 @@ export const useAuthStore = defineStore('auth', () => {
       // Load babies
       await loadBabies()
       
+      authChecked.value = true
       return true
     } catch (err) {
       user.value = null
       babies.value = []
       selectedBaby.value = null
+      authChecked.value = true
       return false
     }
+  }
+
+  // Initial auth check - only called once on app load
+  async function initializeAuth() {
+    if (authChecked.value) {
+      return isAuthenticated.value
+    }
+    
+    return await checkAuth()
+  }
+
+  // Fast auth check - uses local state if already checked
+  function isAuthenticatedFast() {
+    return authChecked.value ? isAuthenticated.value : null
+  }
+
+  // Force re-check auth (for specific scenarios like session timeout)
+  async function recheckAuth() {
+    authChecked.value = false
+    return await checkAuth()
   }
 
   async function loadBabies() {
@@ -108,6 +133,14 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
+  // Clear auth state (for session timeout/errors)
+  function clearAuthState() {
+    user.value = null
+    babies.value = []
+    selectedBaby.value = null
+    authChecked.value = false
+  }
+
   // Clear error
   function clearError() {
     error.value = null
@@ -120,6 +153,7 @@ export const useAuthStore = defineStore('auth', () => {
     selectedBaby,
     loading,
     error,
+    authChecked,
     // Getters
     isAuthenticated,
     username,
@@ -129,9 +163,13 @@ export const useAuthStore = defineStore('auth', () => {
     login,
     logout,
     checkAuth,
+    initializeAuth,
+    isAuthenticatedFast,
+    recheckAuth,
     loadBabies,
     selectBaby,
     loadSelectedBaby,
+    clearAuthState,
     clearError
   }
 })

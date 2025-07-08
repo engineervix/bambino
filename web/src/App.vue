@@ -36,7 +36,7 @@
 </template>
 
 <script setup>
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { storeToRefs } from 'pinia'
@@ -48,6 +48,11 @@ const { isAuthenticated } = storeToRefs(authStore)
 const activeTab = ref('activity')
 
 const isLoginPage = computed(() => route.name === 'login')
+
+// Initialize auth state on app load
+onMounted(async () => {
+  await authStore.initializeAuth()
+})
 
 // Update active tab based on route
 watch(() => route.name, (newRouteName) => {

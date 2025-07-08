@@ -47,16 +47,27 @@ router.beforeEach(async (to, from, next) => {
     return
   }
 
-  // Check authentication
-  const isAuthenticated = await authStore.checkAuth()
+  // Fast check using local state if already authenticated
+  const fastAuthCheck = authStore.isAuthenticatedFast()
+  
+  let isAuthenticated
+  if (fastAuthCheck !== null) {
+    // We have already checked auth, use local state
+    isAuthenticated = fastAuthCheck
+  } else {
+    // First time or auth state unknown, do full check
+    isAuthenticated = await authStore.initializeAuth()
+  }
   
   if (to.meta.requiresAuth && !isAuthenticated) {
     next('/login')
   } else if (to.path === '/login' && isAuthenticated) {
     next('/')
   } else {
-    // Load saved baby selection
-    authStore.loadSelectedBaby()
+    // Load saved baby selection only if authenticated
+    if (isAuthenticated) {
+      authStore.loadSelectedBaby()
+    }
     next()
   }
 })
