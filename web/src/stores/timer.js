@@ -8,9 +8,10 @@ export const useTimerStore = defineStore('timer', () => {
     sleep: null
   })
 
-  function startTimer(type) {
+  function startTimer(type, activityId) {
     activeTimers.value[type] = {
       startTime: new Date(),
+      activityId: activityId,
       duration: 0
     }
   }
@@ -19,5 +20,19 @@ export const useTimerStore = defineStore('timer', () => {
     activeTimers.value[type] = null
   }
 
-  return { activeTimers, startTimer, stopTimer }
+  function getActiveTimer(type) {
+    return activeTimers.value[type]
+  }
+
+  function hasActiveTimer(type) {
+    return !!activeTimers.value[type]
+  }
+
+  return { 
+    activeTimers, 
+    startTimer, 
+    stopTimer,
+    getActiveTimer,
+    hasActiveTimer
+  }
 })
