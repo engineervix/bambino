@@ -142,21 +142,36 @@
 
     <!-- Actions -->
     <div class="d-flex gap-2">
+      <!-- This button handles saving manual entries and updates -->
       <v-btn
-        v-if="!useTimer && hasTimer && !editMode"
+        v-if="!useTimer"
+        type="submit"
+        color="primary"
+        :loading="loading"
+        :disabled="loading"
+        :block="editMode || !hasTimer"
+        class="flex-grow-1"
+      >
+        {{ editMode ? 'Update Sleep' : 'Save' }}
+      </v-btn>
+
+      <!-- This button starts the timer, shown only for new entries -->
+      <v-btn
+        v-if="!useTimer && !editMode && hasTimer"
         variant="outlined"
         color="sleep"
         @click="startTimer"
         :loading="loading"
         :disabled="loading"
-        block
+        class="flex-grow-1"
       >
         <v-icon start>mdi-timer</v-icon>
         Start Sleep Timer
       </v-btn>
 
+      <!-- This button stops the timer -->
       <v-btn
-        v-else-if="useTimer"
+        v-if="useTimer"
         color="success"
         @click="stopTimer"
         :loading="loading"
@@ -165,17 +180,6 @@
       >
         <v-icon start>mdi-stop</v-icon>
         End Sleep
-      </v-btn>
-
-      <v-btn
-        v-else
-        type="submit"
-        color="primary"
-        :loading="loading"
-        :disabled="loading"
-        block
-      >
-        {{ editMode ? 'Update Sleep' : 'Save' }}
       </v-btn>
     </div>
   </v-form>
