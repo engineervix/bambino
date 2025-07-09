@@ -1,5 +1,6 @@
 export PATH := "./node_modules/.bin:" + env_var('PATH')
 DOCKER_COMPOSE_DEV := "docker compose -f docker/docker-compose.dev.yml --env-file .env"
+DOCKER_COMPOSE_PROD := "docker compose --env-file .prod.env"
 
 default:
     just --list
@@ -47,12 +48,34 @@ build:
     @echo "🖼️ Building frontend assets..."
     npm run build
     @echo "🔨 Building Go application binary..."
-    CGO_ENABLED=1 go build -ldflags="-w -s" -o bin/baby-tracker ./cmd/baby-tracker/main.go
+    CGO_ENABLED=1 go build -ldflags="-w -s" -o bin/bambino ./cmd/bambino/main.go
+
+# Run database migrations
+db-migrate:
+    @go run cmd/bambino/main.go db migrate
 
 # 🚀 Run the Go application
 run:
     @echo "🚀 Starting Go application..."
-    go run ./cmd/baby-tracker/main.go serve
+    go run ./cmd/bambino/main.go serve
+
+# Start all services in production mode
+prod-up:
+    @echo "Starting production services..."
+    @{{DOCKER_COMPOSE_PROD}} up -d
+
+# Stop all services in production mode
+prod-down:
+    @echo "Stopping production services..."
+    @{{DOCKER_COMPOSE_PROD}} down
+
+# View logs for all production services
+prod-logs:
+    @{{DOCKER_COMPOSE_PROD}} logs -f
+
+# Execute a command inside the running production container
+prod-exec +CMD:
+    @{{DOCKER_COMPOSE_PROD}} exec bambino {{CMD}}
 
 # 🧪 Run tests with better output formatting
 test:

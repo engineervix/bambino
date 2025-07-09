@@ -4,7 +4,7 @@
 *.dll
 *.so
 *.dylib
-/baby-tracker
+/bambino
 /bin/
 
 # Go
@@ -29,6 +29,7 @@ dist/
 
 # Environment
 .env
+.prod.env
 
 # Database
 *.db

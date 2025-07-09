@@ -1,0 +1,132 @@
+x-logging: &default-logging
+  driver: "json-file"
+  options:
+    max-size: "1m"
+    max-file: "1"
+    tag: "{{.Name}}"
+
+x-common-labels: &default-labels
+  logging: "promtail"
+  logging_jobname: "containerlogs"
+  stackname: "bambino"
+
+services:
+  bambino:
+    build:
+      context: .
+    container_name: bambino
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      ENV: production
+      PORT: 8080
+      DB_TYPE: postgres
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: ${POSTGRES_DB}
+      DB_USER: ${POSTGRES_USER}
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+      SESSION_SECRET: ${SESSION_SECRET}
+      SESSION_MAX_AGE: 86400
+      ALLOWED_ORIGINS: "https://${DOMAIN_NAME}"
+    networks:
+      - traefik-public
+      - default
+    logging: *default-logging
+    labels:
+      <<: *default-labels
+      docker-volume-backup.stop-during-backup: "true"
+      traefik.enable: "true"
+      traefik.http.routers.bambino.rule: "Host(`${DOMAIN_NAME}`)"
+      traefik.http.routers.bambino.entrypoints: "websecure"
+      traefik.http.routers.bambino.tls: "true"
+      traefik.http.routers.bambino.tls.certresolver: "letsencrypt"
+      traefik.http.services.bambino.loadbalancer.server.port: "8080"
+      traefik.http.middlewares.secHeaders.headers.browserXssFilter: "true"
+      traefik.http.middlewares.secHeaders.headers.contentTypeNosniff: "true"
+      traefik.http.middlewares.secHeaders.headers.forceSTSHeader: "true"
+      traefik.http.middlewares.secHeaders.headers.stsIncludeSubdomains: "true"
+      traefik.http.middlewares.secHeaders.headers.stsPreload: "true"
+      traefik.http.middlewares.secHeaders.headers.stsSeconds: "31536000"
+      traefik.http.routers.bambino.middlewares: "secHeaders"
+
+  postgres:
+    image: postgres:16
+    container_name: bambino-postgres
+    restart: unless-stopped
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - database_dump_data:/tmp/backup
+    environment:
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_DB=${POSTGRES_DB}
+    networks:
+      - default
+    logging: *default-logging
+    labels:
+      <<: *default-labels
+      traefik.enable: "false"
+      docker-volume-backup.stop-during-backup: "true"
+      docker-volume-backup.archive-pre: >-
+        /bin/sh -c '
+          set -e &&
+          mkdir -p /tmp/backup &&
+          TIMESTAMP=$$(date +%Y%m%d_%H%M%S) &&
+          BACKUP_FILE="/tmp/backup/postgres_dump_$$TIMESTAMP.gz" &&
+          LATEST_LINK="/tmp/backup/postgres_dump_latest.gz" &&
+          echo "Starting PostgreSQL backup: $$(date)" &&
+          PGPASSWORD=${POSTGRES_PASSWORD} pg_dump -Fc --no-acl --no-owner -U ${POSTGRES_USER} -w ${POSTGRES_DB} | gzip > $$BACKUP_FILE &&
+          chmod 644 $$BACKUP_FILE &&
+          ln -sf $$(basename $$BACKUP_FILE) $$LATEST_LINK &&
+          echo "PostgreSQL backup completed successfully: $$BACKUP_FILE ($$(stat -c%s $$BACKUP_FILE) bytes)"
+        '
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  backup:
+    image: offen/docker-volume-backup:v2.43.4
+    container_name: bambino-backup
+    restart: always
+    networks:
+      - default
+    volumes:
+      - database_dump_data:/backup/database_dump:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      # so we can run our cron rules in local timezone
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+    environment:
+      # Core backup settings
+      - BACKUP_FILENAME=bambino-backup-%Y%m%d-%H%M%S.tar.gz
+      - BACKUP_CRON_EXPRESSION=45 4 * * *
+      - BACKUP_RETENTION_DAYS=7
+
+      # Backblaze B2 configuration (S3-compatible API)
+      - AWS_ACCESS_KEY_ID=${B2_APPLICATION_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${B2_APPLICATION_KEY}
+      - AWS_ENDPOINT=${B2_ENDPOINT}
+      - AWS_S3_BUCKET_NAME=${B2_BUCKET_NAME}
+      - AWS_REGION=${B2_REGION}
+
+      # Notification settings
+      - NOTIFICATION_URLS=${NOTIFICATION_URL}
+      - NOTIFICATION_LEVEL=error
+    logging: *default-logging
+    labels:
+      <<: *default-labels
+      traefik.enable: "false"
+
+volumes:
+  postgres_data:
+  database_dump_data:
+
+networks:
+  traefik-public:
+    external: true
+  default:
