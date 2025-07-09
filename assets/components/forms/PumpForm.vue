@@ -80,7 +80,7 @@
         <v-icon size="48" class="mb-2">mdi-timer</v-icon>
         <p class="text-h4">{{ timerDisplay }}</p>
         <p class="text-body-2">Pump Timer Running</p>
-        
+
         <!-- Amount input while timer running -->
         <v-text-field
           v-model.number="formData.amount_ml"
@@ -133,7 +133,7 @@
         <v-icon start>mdi-timer</v-icon>
         Start Timer
       </v-btn>
-      
+
       <v-btn
         v-else-if="useTimer"
         color="success"
@@ -145,7 +145,7 @@
         <v-icon start>mdi-stop</v-icon>
         Stop & Save
       </v-btn>
-      
+
       <v-btn
         v-else
         type="submit"
@@ -233,10 +233,11 @@ const rules = {
 
 // Timer display with persistent calculation
 const timerDisplay = computed(() => {
-  const timer = timerStore.getActiveTimer('pump')
-  if (!timer) return '00:00'
-  return timerStore.getFormattedDuration('pump')
+  if (!timerStore.hasActiveTimer('pump')) return '00:00'
+  return timerStore.formattedDurations.pump || '00:00'
 })
+
+const isTimerActive = computed(() => timerStore.hasActiveTimer('pump'))
 
 // Watch for active timer changes (only if not in edit mode)
 watch(() => timerStore.hasActiveTimer('pump'), (hasTimer) => {
@@ -288,19 +289,19 @@ async function startTimer() {
       },
       notes: formData.value.notes
     })
-    
+
     if (!response.success) {
       throw new Error(response.error)
     }
-    
+
     const success = timerStore.startTimer('pump', response.data.id)
     if (!success) {
       throw new Error('Failed to start local timer')
     }
-    
+
     return response.data
   })
-  
+
   if (!result.success) {
     handleError({
       title: 'Timer Start Failed',
@@ -319,7 +320,7 @@ async function stopTimer() {
     })
     return
   }
-  
+
   const result = await withErrorHandling(async () => {
     const stopData = {}
     if (formData.value.amount_ml) {
@@ -328,16 +329,16 @@ async function stopTimer() {
     if (formData.value.notes) {
       stopData.notes = formData.value.notes
     }
-    
+
     const response = await activityStore.stopTimer(timer.activityId, stopData)
     if (!response.success) {
       throw new Error(response.error)
     }
-    
+
     timerStore.stopTimer('pump')
     return response.data
   })
-  
+
   if (result.success) {
     emit('success', result.data)
   }
@@ -348,7 +349,7 @@ async function handleSubmit() {
   // Validate form
   const { valid } = await form.value.validate()
   if (!valid) return
-  
+
   // Validate date/time
   const dateTimeError = validateDateTime(formData.value.date, formData.value.time)
   if (dateTimeError) {
@@ -358,10 +359,10 @@ async function handleSubmit() {
     })
     return
   }
-  
+
   const result = await withErrorHandling(async () => {
     const activityDateTime = combineDateAndTime(formData.value.date, formData.value.time)
-    
+
     const activityData = {
       type: 'pump',
       start_time: activityDateTime,
@@ -370,17 +371,17 @@ async function handleSubmit() {
         breast: formData.value.breast
       }
     }
-    
+
     if (formData.value.amount_ml) {
       activityData.pump_data.amount_ml = formData.value.amount_ml
     }
-    
+
     if (formData.value.duration_minutes) {
       activityData.pump_data.duration_minutes = formData.value.duration_minutes
       // Calculate end time
       activityData.end_time = new Date(activityDateTime.getTime() + formData.value.duration_minutes * 60000)
     }
-    
+
     let response
     if (props.editMode && props.activity) {
       // Update existing activity
@@ -389,14 +390,14 @@ async function handleSubmit() {
       // Create new activity
       response = await activityStore.createActivity(activityData)
     }
-    
+
     if (!response.success) {
       throw new Error(response.error)
     }
-    
+
     return response.data
   })
-  
+
   if (result.success) {
     emit('success', result.data)
   }

@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import apiClient from '@/api/client'
+import { useIntervalFn } from '@vueuse/core'
 
 export const useTimerStore = defineStore('timer', () => {
   const activeTimers = ref({
@@ -10,7 +11,9 @@ export const useTimerStore = defineStore('timer', () => {
   })
 
   const isValidating = ref(false) // Add validation state
-  
+  const formattedDurations = ref({})
+  let intervalControls
+
   // Debounced persistence
   let persistenceTimeout = null
   const STORAGE_KEY = 'baby-tracker-timers'
@@ -19,7 +22,7 @@ export const useTimerStore = defineStore('timer', () => {
   // Enhanced validation with retry logic
   async function validateTimers() {
     if (isValidating.value) return false // Prevent concurrent validation
-    
+
     isValidating.value = true
     const currentTimers = { ...activeTimers.value }
     let hasChanges = false
@@ -60,9 +63,9 @@ export const useTimerStore = defineStore('timer', () => {
   // Initialize with better error handling
   async function initializeTimers() {
     console.log('Initializing timers...')
-    
+
     loadPersistedTimers()
-    
+
     if (hasActiveTimers.value) {
       try {
         await validateTimers()
@@ -95,10 +98,10 @@ export const useTimerStore = defineStore('timer', () => {
       activityId: activityId,
       type: type
     }
-    
+
     activeTimers.value[type] = timer
     debouncedPersist()
-    
+
     console.log(`Timer started for ${type}:`, timer)
     return true
   }
@@ -118,22 +121,22 @@ export const useTimerStore = defineStore('timer', () => {
   function getTimerDuration(type) {
     const timer = activeTimers.value[type]
     if (!timer) return 0
-    
+
     const startTime = new Date(timer.startTime)
     if (isNaN(startTime.getTime())) {
       console.warn(`Invalid startTime for ${type} timer:`, timer.startTime)
       return 0
     }
-    
+
     return Math.floor((Date.now() - startTime.getTime()) / 1000)
   }
 
-  function getFormattedDuration(type) {
+  function _getFormattedDuration(type) {
     const duration = getTimerDuration(type)
     const hours = Math.floor(duration / 3600)
     const minutes = Math.floor((duration % 3600) / 60)
     const seconds = duration % 60
-    
+
     if (hours > 0) {
       return `${hours}h ${minutes}m`
     } else {
@@ -150,12 +153,39 @@ export const useTimerStore = defineStore('timer', () => {
     return Object.values(activeTimers.value).filter(timer => timer !== null).length
   })
 
+  function updateFormattedDurations() {
+    const newDurations = {}
+    Object.keys(activeTimers.value).forEach(type => {
+      if (activeTimers.value[type]) {
+        newDurations[type] = _getFormattedDuration(type)
+      } else {
+        newDurations[type] = null
+      }
+    })
+    formattedDurations.value = newDurations
+  }
+
+  // Timer update interval
+  intervalControls = useIntervalFn(updateFormattedDurations, 1000, { immediate: false })
+
+  watch(hasActiveTimers, (hasActive) => {
+    if (hasActive) {
+      updateFormattedDurations()
+      intervalControls.resume()
+    } else {
+      if (intervalControls.isActive.value) {
+        intervalControls.pause()
+      }
+      formattedDurations.value = {}
+    }
+  }, { immediate: true })
+
   // Persistence functions (keep your existing implementation)
   function debouncedPersist() {
     if (persistenceTimeout) {
       clearTimeout(persistenceTimeout)
     }
-    
+
     persistenceTimeout = setTimeout(() => {
       persistTimers()
       persistenceTimeout = null
@@ -170,7 +200,7 @@ export const useTimerStore = defineStore('timer', () => {
           timersToSave[type] = activeTimers.value[type]
         }
       })
-      
+
       if (Object.keys(timersToSave).length > 0) {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(timersToSave))
       } else {
@@ -186,7 +216,7 @@ export const useTimerStore = defineStore('timer', () => {
       const saved = localStorage.getItem(STORAGE_KEY)
       if (saved) {
         const timers = JSON.parse(saved)
-        
+
         Object.keys(timers).forEach(type => {
           if (timers[type]?.activityId && timers[type]?.startTime) {
             const startTime = new Date(timers[type].startTime)
@@ -208,32 +238,32 @@ export const useTimerStore = defineStore('timer', () => {
       pump: null,
       sleep: null
     }
-    
+
     if (persistenceTimeout) {
       clearTimeout(persistenceTimeout)
       persistenceTimeout = null
     }
-    
+
     localStorage.removeItem(STORAGE_KEY)
   }
 
-  return { 
+  return {
     // State
     activeTimers,
     isValidating,
-    
+    formattedDurations,
+
     // Computed
     hasActiveTimers,
     activeTimerCount,
-    
+
     // Actions
-    startTimer, 
+    startTimer,
     stopTimer,
     getActiveTimer: (type) => activeTimers.value[type],
     hasActiveTimer: (type) => !!activeTimers.value[type],
     getTimerDuration,
-    getFormattedDuration,
-    
+
     // Lifecycle
     initializeTimers,
     validateTimers,

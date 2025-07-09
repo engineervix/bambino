@@ -64,7 +64,7 @@
             <v-icon start>mdi-clock-plus</v-icon>
             Add End Time
           </v-btn>
-          
+
           <v-btn
             v-else
             variant="text"
@@ -154,7 +154,7 @@
         <v-icon start>mdi-timer</v-icon>
         Start Sleep Timer
       </v-btn>
-      
+
       <v-btn
         v-else-if="useTimer"
         color="success"
@@ -166,7 +166,7 @@
         <v-icon start>mdi-stop</v-icon>
         End Sleep
       </v-btn>
-      
+
       <v-btn
         v-else
         type="submit"
@@ -225,7 +225,7 @@ const initializeFormData = () => {
     const activity = props.activity
     const startTime = new Date(activity.start_time)
     const endTime = activity.end_time ? new Date(activity.end_time) : null
-    
+
     return {
       startDate: getDateString(startTime),
       startTime: getTimeString(startTime),
@@ -273,7 +273,7 @@ const locationOptions = [
 // Quality labels
 const qualityLabels = [
   'Poor',
-  'Fair', 
+  'Fair',
   'Good',
   'Very Good',
   'Excellent'
@@ -281,10 +281,11 @@ const qualityLabels = [
 
 // Timer display with persistent calculation - shows hours for longer sleeps
 const timerDisplay = computed(() => {
-  const timer = timerStore.getActiveTimer('sleep')
-  if (!timer) return '00:00'
-  return timerStore.getFormattedDuration('sleep')
+  if (!timerStore.hasActiveTimer('sleep')) return '00:00'
+  return timerStore.formattedDurations.sleep || '00:00'
 })
+
+const isTimerActive = computed(() => timerStore.hasActiveTimer('sleep'))
 
 // Watch for active timer changes (only if not in edit mode)
 watch(() => timerStore.hasActiveTimer('sleep'), (hasTimer) => {
@@ -354,19 +355,19 @@ async function startTimer() {
       },
       notes: formData.value.notes
     })
-    
+
     if (!response.success) {
       throw new Error(response.error)
     }
-    
+
     const success = timerStore.startTimer('sleep', response.data.id)
     if (!success) {
       throw new Error('Failed to start local timer')
     }
-    
+
     return response.data
   })
-  
+
   if (!result.success) {
     handleError({
       title: 'Timer Start Failed',
@@ -385,7 +386,7 @@ async function stopTimer() {
     })
     return
   }
-  
+
   const result = await withErrorHandling(async () => {
     const stopData = {}
     if (formData.value.quality) {
@@ -394,16 +395,16 @@ async function stopTimer() {
     if (formData.value.notes) {
       stopData.notes = formData.value.notes
     }
-    
+
     const response = await activityStore.stopTimer(timer.activityId, stopData)
     if (!response.success) {
       throw new Error(response.error)
     }
-    
+
     timerStore.stopTimer('sleep')
     return response.data
   })
-  
+
   if (result.success) {
     emit('success', result.data)
   }
@@ -414,7 +415,7 @@ async function handleSubmit() {
   // Validate form
   const { valid } = await form.value.validate()
   if (!valid) return
-  
+
   // Validate start date/time
   const startDateTimeError = validateDateTime(formData.value.startDate, formData.value.startTime)
   if (startDateTimeError) {
@@ -424,7 +425,7 @@ async function handleSubmit() {
     })
     return
   }
-  
+
   // Validate end date/time if provided
   if (showEndTime.value && formData.value.endTime) {
     const endDateTimeError = validateDateTime(formData.value.endDate, formData.value.endTime)
@@ -435,11 +436,11 @@ async function handleSubmit() {
       })
       return
     }
-    
+
     // Check that end is after start
     const startDateTime = combineDateAndTime(formData.value.startDate, formData.value.startTime)
     const endDateTime = combineDateAndTime(formData.value.endDate, formData.value.endTime)
-    
+
     if (endDateTime <= startDateTime) {
       handleError({
         title: 'Invalid Time Range',
@@ -448,10 +449,10 @@ async function handleSubmit() {
       return
     }
   }
-  
+
   const result = await withErrorHandling(async () => {
     const startDateTime = combineDateAndTime(formData.value.startDate, formData.value.startTime)
-    
+
     const activityData = {
       type: 'sleep',
       start_time: startDateTime,
@@ -460,16 +461,16 @@ async function handleSubmit() {
         location: formData.value.location
       }
     }
-    
+
     if (showEndTime.value && formData.value.endTime) {
       const endDateTime = combineDateAndTime(formData.value.endDate, formData.value.endTime)
       activityData.end_time = endDateTime
-      
+
       if (formData.value.quality) {
         activityData.sleep_data.quality = formData.value.quality
       }
     }
-    
+
     let response
     if (props.editMode && props.activity) {
       // Update existing activity
@@ -478,14 +479,14 @@ async function handleSubmit() {
       // Create new activity
       response = await activityStore.createActivity(activityData)
     }
-    
+
     if (!response.success) {
       throw new Error(response.error)
     }
-    
+
     return response.data
   })
-  
+
   if (result.success) {
     emit('success', result.data)
   }
