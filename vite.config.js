@@ -13,6 +13,9 @@ export default defineConfig({
       '@': fileURLToPath(new URL('./assets', import.meta.url))
     }
   },
+  build: {
+    outDir: 'internal/assets/dist'
+  },
   server: {
     proxy: {
       '/api': {

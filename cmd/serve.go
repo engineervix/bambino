@@ -1,9 +1,12 @@
 package cmd
 
 import (
+	"io/fs"
 	"log"
+	"net/http"
 	"strings"
 
+	"github.com/engineervix/baby-tracker/internal/assets"
 	"github.com/joho/godotenv"
 	"github.com/labstack/echo-contrib/session"
 	"github.com/labstack/echo/v4"
@@ -149,11 +152,16 @@ func runServer(overridePort string) {
 
 	// Serve static files in production
 	if cfg.Env == "production" {
-		e.Static("/", "web/dist")
-		// Catch-all route for Vue Router (should be last)
-		e.GET("/*", func(c echo.Context) error {
-			return c.File("web/dist/index.html")
-		})
+		web, err := fs.Sub(assets.Assets, "dist")
+		if err != nil {
+			log.Fatal("failed to create sub filesystem", err)
+		}
+		e.Use(middleware.StaticWithConfig(middleware.StaticConfig{
+			Root:       ".",
+			Index:      "index.html",
+			HTML5:      true,
+			Filesystem: http.FS(web),
+		}))
 	}
 
 	// Start server
