@@ -1,4 +1,4 @@
-# Baby Tracker
+# Bambino
 
 A self-hosted baby activity tracking app for personal use. Tracks feeding, sleeping, diapers, and other baby activities with complete data ownership.
 
@@ -15,6 +15,8 @@ A self-hosted baby activity tracking app for personal use. Tracks feeding, sleep
   - [Database](#database)
   - [Development Mode](#development-mode)
   - [Production Mode](#production-mode)
+    - [With Docker (Recommended)](#with-docker-recommended)
+    - [With Local Binary](#with-local-binary)
   - [Creating a User](#creating-a-user)
   - [Command-Line Help](#command-line-help)
 - [Testing](#testing)
@@ -72,12 +74,12 @@ just up
 
 Then, run the database migrations. It's recommended to use the binary:
 ```bash
-./bin/baby-tracker db migrate
+./bin/bambino db migrate
 ```
 
 Alternatively, you can run the migrations without building the binary:
 ```bash
-go run cmd/baby-tracker/main.go db migrate
+go run cmd/bambino/main.go db migrate
 ```
 
 ### Development Mode
@@ -97,9 +99,65 @@ The application will be available at `http://localhost:5173`.
 
 ### Production Mode
 
-In production mode, you can run the server via:
+There are two ways to run the application in production mode.
+
+#### With Docker (Recommended)
+
+For production, create a `.prod.env` file with your production secrets. **Do not commit this file to version control.**
+
+Create a file named `.prod.env` and paste the following content into it, replacing the placeholder values:
+
+```env
+# The domain name for your application
+DOMAIN_NAME=your-domain.com
+
+# PostgreSQL connection details
+POSTGRES_USER=baby
+POSTGRES_DB=baby
+POSTGRES_PASSWORD=generate-a-strong-password
+
+# A long, random string for session signing
+SESSION_SECRET=generate-a-long-random-secret-string
+
+# Backblaze B2 credentials (optional, for backups)
+# B2_APPLICATION_KEY_ID=
+# B2_APPLICATION_KEY=
+# B2_ENDPOINT=
+# B2_BUCKET_NAME=
+# B2_REGION=
+
+# Notification URL for backup failures (optional)
+# NOTIFICATION_URL=
+```
+
+You can then manage the application using `just`:
+
 ```bash
-ENV=production ./bin/baby-tracker serve
+# Start all services in the background
+just prod-up
+
+# View the logs
+just prod-logs
+
+# Stop all services
+just prod-down
+
+# Execute a command in the running container
+just prod-exec ls -la
+
+# Get an interactive shell
+just prod-shell
+```
+
+The application will be available on the domain you configure in `.prod.env`.
+
+#### With Local Binary
+
+You can also run a production-like instance locally without Docker. This uses the compiled binary and respects the `ENV` environment variable.
+
+```bash
+just build
+ENV=production ./bin/bambino serve
 ```
 The application will be available at `http://localhost:8080`.
 
@@ -108,7 +166,7 @@ The application will be available at `http://localhost:8080`.
 Create an initial user and baby. The date should be in `YYYY-MM-DD` format.
 
 ```bash
-./bin/baby-tracker create-user -u <username> -b <babyname> -d <date_of_birth>
+./bin/bambino create-user -u <username> -b <babyname> -d <date_of_birth>
 ```
 
 ### Command-Line Help
@@ -116,8 +174,8 @@ Create an initial user and baby. The date should be in `YYYY-MM-DD` format.
 You can get help for any command by passing the `--help` flag.
 
 ```bash
-./bin/baby-tracker --help
-./bin/baby-tracker create-user --help
+./bin/bambino --help
+./bin/bambino create-user --help
 ```
 
 ## Testing
