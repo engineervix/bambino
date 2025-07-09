@@ -256,10 +256,10 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch, markRaw } from "vue";
+import { ref, computed, onMounted, markRaw } from "vue";
 import { useActivityStore } from "@/stores/activity";
 import { storeToRefs } from "pinia";
-import { formatActivityDate, formatTimeAgo } from "@/utils/datetime";
+import { formatActivityDate } from "@/utils/datetime";
 import { format, subDays, startOfWeek, startOfMonth } from "date-fns";
 
 // Import the activity details component
@@ -462,7 +462,7 @@ function closeEditDialog() {
   }, 300);
 }
 
-async function handleEditSuccess(data) {
+async function handleEditSuccess() {
   // Close edit dialog
   closeEditDialog();
 

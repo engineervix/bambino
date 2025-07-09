@@ -268,7 +268,7 @@ function handleQuickAdd(activity) {
   showQuickAdd.value = true;
 }
 
-function handleFormSuccess(data) {
+function handleFormSuccess() {
   // Close dialog
   closeDialog();
 
