@@ -1,23 +1,34 @@
 <template>
-  <v-container class="pa-0">
+  <div>
     <!-- Header with baby info -->
-    <v-sheet class="pa-4 mb-4" color="surface">
-      <div v-if="currentBaby" class="d-flex align-center">
-        <v-avatar size="56" class="mr-3">
-          <v-icon size="large">mdi-baby-face</v-icon>
-        </v-avatar>
-        <div>
-          <h1 class="text-h5">{{ currentBaby.name }}</h1>
-          <p class="text-body-2 text-grey">{{ currentBaby.age_display }} • {{ currentDate }}</p>
+    <v-sheet
+      class="hero-banner mb-8"
+      :height="bannerHeight"
+      elevation="0"
+      :style="{ opacity: headerOpacity }"
+    >
+      <v-container class="fill-height d-flex align-center px-6" fluid>
+        <div class="d-flex flex-column align-center justify-center text-center w-100">
+          <v-avatar :size="avatarSize" class="mb-4 elevation-2">
+            <v-img src="/baby.svg" cover />
+          </v-avatar>
+          <h1 class="text-h4 font-weight-bold mb-2">
+            {{ currentBaby ? currentBaby.name : 'Baby Tracker' }}
+          </h1>
+          <p class="text-subtitle-2 mb-0">
+            {{ currentBaby ? currentBaby.age_display : 'No profile' }} • {{ currentDate }}
+          </p>
         </div>
-      </div>
-      <div v-else class="text-center py-4">
-        <v-icon size="48" class="mb-2 text-grey">mdi-baby-face-outline</v-icon>
-        <p class="text-body-1 text-grey">No baby profile found</p>
-        <v-btn color="primary" variant="tonal" size="small" to="/account">
-          Create Baby Profile
-        </v-btn>
-      </div>
+      </v-container>
+
+      <!-- Decorative wave -->
+      <svg class="wave" viewBox="0 0 1440 320" preserveAspectRatio="none">
+        <path
+          d="M0,160L48,154.7C96,149,192,139,288,138.7C384,139,480,149,576,170.7C672,192,768,224,864,202.7C960,181,1056,107,1152,85.3C1248,64,1344,96,1392,112L1440,128L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z"
+          fill="currentColor"
+          opacity="0.12"
+        />
+      </svg>
     </v-sheet>
 
     <!-- Activity cards -->
@@ -142,16 +153,18 @@
       <v-icon start>mdi-check-circle</v-icon>
       Activity saved successfully!
     </v-snackbar>
-  </v-container>
+  </div>
 </template>
 
 <script setup>
 import { ref, computed, onMounted, markRaw } from 'vue'
+import { onUnmounted } from 'vue'
 import { format } from 'date-fns'
 import { useActivityStore } from '@/stores/activity'
 import { useAuthStore } from '@/stores/auth'
 import { storeToRefs } from 'pinia'
 import ActivityCard from '@/components/activity/ActivityCard.vue'
+import { useDisplay } from 'vuetify'
 
 // Form components
 import FeedForm from '@/components/forms/FeedForm.vue'
@@ -181,6 +194,26 @@ const { currentBaby } = storeToRefs(authStore)
 const showQuickAdd = ref(false)
 const showSuccess = ref(false)
 const currentActivity = ref(null)
+
+// Hero banner opacity
+const headerOpacity = ref(1)
+
+// Responsive sizes
+const display = useDisplay()
+const bannerHeight = computed(() => (display.mdAndUp.value ? 240 : 180))
+const avatarSize = computed(() => (display.mdAndUp.value ? 96 : 72))
+
+function handleScroll() {
+  headerOpacity.value = Math.max(0, 1 - window.scrollY / 180)
+}
+
+onMounted(() => {
+  window.addEventListener('scroll', handleScroll, { passive: true })
+})
+
+onUnmounted(() => {
+  window.removeEventListener('scroll', handleScroll)
+})
 
 // Current date display
 const currentDate = computed(() => {
@@ -276,3 +309,23 @@ onMounted(async () => {
   await activityStore.getRecentStats()
 })
 </script>
+
+<style scoped>
+.hero-banner {
+  position: relative;
+  background: linear-gradient(135deg, rgba(var(--v-theme-primary),0.35) 0%, rgba(var(--v-theme-accent1),0.35) 100%);
+  color: white;
+  overflow: hidden;
+  /* wave overscroll handles bottom edge */
+}
+
+.wave {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 60px;
+  pointer-events: none;
+  color: rgba(255,255,255,0.5);
+}
+</style>
