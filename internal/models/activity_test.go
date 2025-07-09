@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/engineervix/baby-tracker/internal/models"
+	"github.com/engineervix/bambino/internal/models"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

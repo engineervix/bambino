@@ -5,8 +5,8 @@ import (
 
 	"gorm.io/gorm"
 
-	"github.com/engineervix/baby-tracker/internal/config"
-	"github.com/engineervix/baby-tracker/internal/models"
+	"github.com/engineervix/bambino/internal/config"
+	"github.com/engineervix/bambino/internal/models"
 )
 
 // RunTestMigrations runs AutoMigrate for tests

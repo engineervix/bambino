@@ -7,8 +7,8 @@ import (
 	"github.com/joho/godotenv"
 	"github.com/spf13/cobra"
 
-	"github.com/engineervix/baby-tracker/internal/config"
-	"github.com/engineervix/baby-tracker/internal/database"
+	"github.com/engineervix/bambino/internal/config"
+	"github.com/engineervix/bambino/internal/database"
 )
 
 var dbCmd = &cobra.Command{
@@ -119,7 +119,7 @@ func testDatabaseConnection() {
 			fmt.Printf("  - %s\n", table)
 		}
 	} else {
-		fmt.Println("\nNo tables found. Run 'baby-tracker db migrate' to create tables.")
+		fmt.Println("\nNo tables found. Run 'bambino db migrate' to create tables.")
 	}
 }
 

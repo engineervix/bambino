@@ -29,7 +29,7 @@ func Load() *Config {
 		Port:           getEnv("PORT", "8080"),
 		Env:            getEnv("ENV", "development"),
 		DBType:         getEnv("DB_TYPE", "sqlite"),
-		DBPath:         getEnv("DB_PATH", "./baby-tracker.db"),
+		DBPath:         getEnv("DB_PATH", "./bambino.db"),
 		DBHost:         getEnv("DB_HOST", "localhost"),
 		DBPort:         getEnv("DB_PORT", "5432"),
 		DBName:         getEnv("DB_NAME", "baby_tracker"),

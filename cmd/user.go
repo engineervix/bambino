@@ -10,10 +10,10 @@ import (
 	"github.com/spf13/cobra"
 	"golang.org/x/term"
 
-	"github.com/engineervix/baby-tracker/internal/config"
-	"github.com/engineervix/baby-tracker/internal/database"
-	"github.com/engineervix/baby-tracker/internal/models"
-	"github.com/engineervix/baby-tracker/internal/utils"
+	"github.com/engineervix/bambino/internal/config"
+	"github.com/engineervix/bambino/internal/database"
+	"github.com/engineervix/bambino/internal/models"
+	"github.com/engineervix/bambino/internal/utils"
 )
 
 var createUserCmd = &cobra.Command{

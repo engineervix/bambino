@@ -9,7 +9,7 @@ import (
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
 
-	"github.com/engineervix/baby-tracker/internal/config"
+	"github.com/engineervix/bambino/internal/config"
 )
 
 // createTestDB creates a test database without running migrations

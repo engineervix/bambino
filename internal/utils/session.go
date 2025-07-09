@@ -11,7 +11,7 @@ import (
 )
 
 const (
-	SessionName = "baby-tracker-session"
+	SessionName = "bambino-session"
 	UserIDKey   = "user_id"
 	UsernameKey = "username"
 )

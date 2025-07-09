@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/engineervix/baby-tracker/cmd"
+	"github.com/engineervix/bambino/cmd"
 )
 
 func main() {

@@ -16,7 +16,7 @@ export const useTimerStore = defineStore('timer', () => {
 
   // Debounced persistence
   let persistenceTimeout = null
-  const STORAGE_KEY = 'baby-tracker-timers'
+  const STORAGE_KEY = 'bambino-timers'
   const PERSISTENCE_DELAY = 300
 
   // Enhanced validation with retry logic

@@ -1,4 +1,4 @@
-module github.com/engineervix/baby-tracker
+module github.com/engineervix/bambino
 
 go 1.23.4
 

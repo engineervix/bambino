@@ -7,7 +7,7 @@ import (
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 
-	"github.com/engineervix/baby-tracker/internal/config"
+	"github.com/engineervix/bambino/internal/config"
 )
 
 // Connect establishes a database connection based on the configuration

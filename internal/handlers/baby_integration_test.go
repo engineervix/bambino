@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/engineervix/baby-tracker/internal/models"
+	"github.com/engineervix/bambino/internal/models"
 )
 
 func TestBabyProfileIntegration(t *testing.T) {

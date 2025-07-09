@@ -52,7 +52,7 @@
                   <p class="text-grey mb-2">No baby profiles yet</p>
                   <p class="text-caption text-grey">
                     Use the command line to create a baby profile:<br>
-                    <code>./baby-tracker create-user -u username -b "Baby Name"</code>
+                    <code>./bambino create-user -u username -b "Baby Name"</code>
                   </p>
                 </div>
               </v-card-text>

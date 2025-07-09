@@ -8,7 +8,7 @@ import (
 )
 
 var rootCmd = &cobra.Command{
-	Use:   "baby-tracker",
+	Use:   "bambino",
 	Short: "Baby Tracker - Self-hosted baby activity tracking",
 	Long: `Baby Tracker is a privacy-focused, self-hosted application 
 for tracking baby activities like feeding, sleeping, and diaper changes.`,

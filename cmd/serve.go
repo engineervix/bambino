@@ -6,18 +6,18 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/engineervix/baby-tracker/internal/assets"
+	"github.com/engineervix/bambino/internal/assets"
 	"github.com/joho/godotenv"
 	"github.com/labstack/echo-contrib/session"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/spf13/cobra"
 
-	"github.com/engineervix/baby-tracker/internal/config"
-	"github.com/engineervix/baby-tracker/internal/database"
-	"github.com/engineervix/baby-tracker/internal/handlers"
-	authMiddleware "github.com/engineervix/baby-tracker/internal/middleware"
-	"github.com/engineervix/baby-tracker/internal/utils"
+	"github.com/engineervix/bambino/internal/config"
+	"github.com/engineervix/bambino/internal/database"
+	"github.com/engineervix/bambino/internal/handlers"
+	authMiddleware "github.com/engineervix/bambino/internal/middleware"
+	"github.com/engineervix/bambino/internal/utils"
 )
 
 var serveCmd = &cobra.Command{

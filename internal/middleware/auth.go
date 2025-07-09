@@ -6,7 +6,7 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 
-	"github.com/engineervix/baby-tracker/internal/utils"
+	"github.com/engineervix/bambino/internal/utils"
 )
 
 // AuthConfig defines the configuration for auth middleware

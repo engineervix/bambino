@@ -12,7 +12,7 @@ import (
 	"github.com/golang-migrate/migrate/v4/source/iofs"
 	"gorm.io/gorm"
 
-	"github.com/engineervix/baby-tracker/internal/config"
+	"github.com/engineervix/bambino/internal/config"
 )
 
 //go:embed migrations/*.sql

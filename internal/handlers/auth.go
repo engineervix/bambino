@@ -7,8 +7,8 @@ import (
 	"github.com/labstack/echo/v4"
 	"gorm.io/gorm"
 
-	"github.com/engineervix/baby-tracker/internal/models"
-	"github.com/engineervix/baby-tracker/internal/utils"
+	"github.com/engineervix/bambino/internal/models"
+	"github.com/engineervix/bambino/internal/utils"
 )
 
 // LoginRequest represents the login request body

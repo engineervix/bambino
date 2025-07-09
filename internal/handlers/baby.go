@@ -9,7 +9,7 @@ import (
 	"github.com/labstack/echo/v4"
 	"gorm.io/gorm"
 
-	"github.com/engineervix/baby-tracker/internal/models"
+	"github.com/engineervix/bambino/internal/models"
 )
 
 // BabyResponse represents the response for baby data

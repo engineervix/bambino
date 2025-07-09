@@ -12,7 +12,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"gorm.io/gorm"
 
-	"github.com/engineervix/baby-tracker/internal/models"
+	"github.com/engineervix/bambino/internal/models"
 )
 
 func TestGetBabies(t *testing.T) {

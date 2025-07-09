@@ -1,4 +1,4 @@
--- PostgreSQL initialization script for baby-tracker
+-- PostgreSQL initialization script for bambino
 
 -- Enable UUID extension
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";

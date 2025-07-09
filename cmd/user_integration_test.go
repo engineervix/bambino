@@ -13,9 +13,9 @@ import (
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
 
-	"github.com/engineervix/baby-tracker/internal/config"
-	"github.com/engineervix/baby-tracker/internal/database"
-	"github.com/engineervix/baby-tracker/internal/models"
+	"github.com/engineervix/bambino/internal/config"
+	"github.com/engineervix/bambino/internal/database"
+	"github.com/engineervix/bambino/internal/models"
 )
 
 func setupTestDatabase(t *testing.T) (*gorm.DB, func()) {
