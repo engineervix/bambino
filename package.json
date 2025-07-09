@@ -1,7 +1,10 @@
 {
   "name": "bambino",
-  "private": true,
   "version": "1.0.0",
+  "description": "A self-hosted baby activity tracking app for personal use. Tracks feeding, sleeping, diapers, and more.",
+  "private": true,
+  "author": "Victor Miti",
+  "license": "GPL-3.0-or-later",
   "type": "module",
   "scripts": {
     "dev": "vite",
