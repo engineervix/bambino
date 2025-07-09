@@ -39,6 +39,13 @@ const router = createRouter({
       name: 'account',
       component: () => import('../views/Account.vue'),
       meta: { requiresAuth: true }
+    },
+    // 404 – keep as last route
+    {
+      path: '/:pathMatch(.*)*',
+      name: 'not-found',
+      component: () => import('../views/NotFound.vue'),
+      meta: { requiresAuth: false, title: 'Not Found' }
     }
   ]
 })
