@@ -8,9 +8,7 @@
             Bambino
           </v-card-title>
 
-          <v-card-subtitle class="text-center mb-6">
-            Sign in to continue
-          </v-card-subtitle>
+          <v-card-subtitle class="text-center mb-6"> Sign in to continue </v-card-subtitle>
 
           <v-card-text>
             <v-form @submit.prevent="handleLogin" ref="form">
@@ -19,7 +17,7 @@
                 label="Username"
                 variant="outlined"
                 prepend-inner-icon="mdi-account"
-                :rules="[v => !!v || 'Username is required']"
+                :rules="[(v) => !!v || 'Username is required']"
                 :disabled="loading"
                 class="mb-4"
               />
@@ -30,30 +28,16 @@
                 type="password"
                 variant="outlined"
                 prepend-inner-icon="mdi-lock"
-                :rules="[v => !!v || 'Password is required']"
+                :rules="[(v) => !!v || 'Password is required']"
                 :disabled="loading"
                 @keyup.enter="handleLogin"
               />
 
-              <v-alert
-                v-if="error"
-                type="error"
-                variant="tonal"
-                class="mb-4"
-                closable
-                @click:close="clearError"
-              >
+              <v-alert v-if="error" type="error" variant="tonal" class="mb-4" closable @click:close="clearError">
                 {{ error }}
               </v-alert>
 
-              <v-btn
-                type="submit"
-                color="primary"
-                size="large"
-                block
-                :loading="loading"
-                :disabled="loading"
-              >
+              <v-btn type="submit" color="primary" size="large" block :loading="loading" :disabled="loading">
                 Sign In
               </v-btn>
             </v-form>
@@ -65,36 +49,36 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
-import { useAuthStore } from '@/stores/auth'
-import { storeToRefs } from 'pinia'
-import { useRouter } from 'vue-router'
+import { ref, onMounted } from "vue";
+import { useAuthStore } from "@/stores/auth";
+import { storeToRefs } from "pinia";
+import { useRouter } from "vue-router";
 
-const router = useRouter()
-const authStore = useAuthStore()
-const { loading, error } = storeToRefs(authStore)
-const { login, clearError, checkAuth } = authStore
+const router = useRouter();
+const authStore = useAuthStore();
+const { loading, error } = storeToRefs(authStore);
+const { login, clearError, checkAuth } = authStore;
 
-const form = ref(null)
+const form = ref(null);
 const credentials = ref({
-  username: '',
-  password: ''
-})
+  username: "",
+  password: "",
+});
 
 // Check if already authenticated on mount
 onMounted(async () => {
-  const isAuth = await checkAuth()
+  const isAuth = await checkAuth();
   if (isAuth) {
     // Already logged in, redirect to home
-    router.push('/')
+    router.push("/");
   }
-})
+});
 
 async function handleLogin() {
-  const { valid } = await form.value.validate()
+  const { valid } = await form.value.validate();
 
   if (valid) {
-    await login(credentials.value)
+    await login(credentials.value);
   }
 }
 </script>

@@ -12,4 +12,4 @@
 
 <script setup>
 // Nothing needed here – purely presentational
-</script> 
+</script>

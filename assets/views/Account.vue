@@ -51,7 +51,7 @@
                 <div v-else class="text-center py-4">
                   <p class="text-grey mb-2">No baby profiles yet</p>
                   <p class="text-caption text-grey">
-                    Use the command line to create a baby profile:<br>
+                    Use the command line to create a baby profile:<br />
                     <code>./bambino create-user -u username -b "Baby Name"</code>
                   </p>
                 </div>
@@ -60,13 +60,7 @@
           </v-col>
         </v-row>
 
-        <v-btn
-          color="error"
-          size="large"
-          block
-          @click="handleLogout"
-          :loading="loading"
-        >
+        <v-btn color="error" size="large" block @click="handleLogout" :loading="loading">
           <v-icon start>mdi-logout</v-icon>
           Sign Out
         </v-btn>
@@ -76,19 +70,19 @@
 </template>
 
 <script setup>
-import { useAuthStore } from '@/stores/auth'
-import { storeToRefs } from 'pinia'
-import { format } from 'date-fns'
+import { useAuthStore } from "@/stores/auth";
+import { storeToRefs } from "pinia";
+import { format } from "date-fns";
 
-const authStore = useAuthStore()
-const { username, loading, babies, currentBaby } = storeToRefs(authStore)
-const { logout, selectBaby } = authStore
+const authStore = useAuthStore();
+const { username, loading, babies, currentBaby } = storeToRefs(authStore);
+const { logout, selectBaby } = authStore;
 
 async function handleLogout() {
-  await logout()
+  await logout();
 }
 
 function formatDate(dateString) {
-  return format(new Date(dateString), 'MMM d, yyyy')
+  return format(new Date(dateString), "MMM d, yyyy");
 }
 </script>

@@ -1,11 +1,5 @@
 <template>
-  <v-card
-    :color="bgColor"
-    class="activity-card"
-    rounded="lg"
-    elevation="2"
-    @click="$emit('click')"
-  >
+  <v-card :color="bgColor" class="activity-card" rounded="lg" elevation="2" @click="$emit('click')">
     <!-- Header with title -->
     <v-card-title class="pb-2">
       <span class="text-h5">{{ title }}</span>
@@ -21,14 +15,7 @@
 
     <!-- Action button -->
     <div class="activity-action">
-      <v-btn
-        icon
-        size="large"
-        :color="color"
-        variant="tonal"
-        elevation="2"
-        @click.stop="$emit('add')"
-      >
+      <v-btn icon size="large" :color="color" variant="tonal" elevation="2" @click.stop="$emit('add')">
         <v-icon>mdi-plus</v-icon>
       </v-btn>
     </div>
@@ -36,31 +23,31 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { computed } from "vue";
 
 const props = defineProps({
   title: {
     type: String,
-    required: true
+    required: true,
   },
   description: {
     type: String,
-    required: true
+    required: true,
   },
   icon: {
     type: String,
-    required: true
+    required: true,
   },
   color: {
     type: String,
-    default: 'primary'
-  }
-})
+    default: "primary",
+  },
+});
 
 // Derive background tint token (e.g., "feed" -> "feed-bg")
-const bgColor = computed(() => `${props.color}-bg`)
+const bgColor = computed(() => `${props.color}-bg`);
 
-defineEmits(['click', 'add'])
+defineEmits(["click", "add"]);
 </script>
 
 <style scoped>
@@ -68,7 +55,9 @@ defineEmits(['click', 'add'])
   position: relative;
   min-height: 180px;
   cursor: pointer;
-  transition: transform 0.25s ease, box-shadow 0.25s ease;
+  transition:
+    transform 0.25s ease,
+    box-shadow 0.25s ease;
   border-radius: 12px;
   overflow: hidden;
   /* Subtle outline */

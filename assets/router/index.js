@@ -1,96 +1,96 @@
-import { createRouter, createWebHistory } from 'vue-router'
-import { useAuthStore } from '@/stores/auth'
+import { createRouter, createWebHistory } from "vue-router";
+import { useAuthStore } from "@/stores/auth";
 
 // Helper to capitalize first letter
 function capitalize(word) {
-  if (!word) return ''
-  return word.charAt(0).toUpperCase() + word.slice(1)
+  if (!word) return "";
+  return word.charAt(0).toUpperCase() + word.slice(1);
 }
 
 const router = createRouter({
   history: createWebHistory(),
   routes: [
     {
-      path: '/login',
-      name: 'login',
-      component: () => import('../views/Login.vue'),
-      meta: { requiresAuth: false }
+      path: "/login",
+      name: "login",
+      component: () => import("../views/Login.vue"),
+      meta: { requiresAuth: false },
     },
     {
-      path: '/',
-      name: 'activity',
-      component: () => import('../views/Activity.vue'),
-      meta: { requiresAuth: true }
+      path: "/",
+      name: "activity",
+      component: () => import("../views/Activity.vue"),
+      meta: { requiresAuth: true },
     },
     {
-      path: '/history',
-      name: 'history',
-      component: () => import('../views/History.vue'),
-      meta: { requiresAuth: true }
+      path: "/history",
+      name: "history",
+      component: () => import("../views/History.vue"),
+      meta: { requiresAuth: true },
     },
     {
-      path: '/trends',
-      name: 'trends',
-      component: () => import('../views/Trends.vue'),
-      meta: { requiresAuth: true }
+      path: "/trends",
+      name: "trends",
+      component: () => import("../views/Trends.vue"),
+      meta: { requiresAuth: true },
     },
     {
-      path: '/account',
-      name: 'account',
-      component: () => import('../views/Account.vue'),
-      meta: { requiresAuth: true }
+      path: "/account",
+      name: "account",
+      component: () => import("../views/Account.vue"),
+      meta: { requiresAuth: true },
     },
     // 404 – keep as last route
     {
-      path: '/:pathMatch(.*)*',
-      name: 'not-found',
-      component: () => import('../views/NotFound.vue'),
-      meta: { requiresAuth: false, title: 'Not Found' }
-    }
-  ]
-})
+      path: "/:pathMatch(.*)*",
+      name: "not-found",
+      component: () => import("../views/NotFound.vue"),
+      meta: { requiresAuth: false, title: "Not Found" },
+    },
+  ],
+});
 
 // Navigation guard
 router.beforeEach(async (to, from, next) => {
-  const authStore = useAuthStore()
+  const authStore = useAuthStore();
 
   // Skip auth check for login page
   if (to.meta.requiresAuth === false) {
-    next()
-    return
+    next();
+    return;
   }
 
   // Fast check using local state if already authenticated
-  const fastAuthCheck = authStore.isAuthenticatedFast()
+  const fastAuthCheck = authStore.isAuthenticatedFast();
 
-  let isAuthenticated
+  let isAuthenticated;
   if (fastAuthCheck !== null) {
     // We have already checked auth, use local state
-    isAuthenticated = fastAuthCheck
+    isAuthenticated = fastAuthCheck;
   } else {
     // First time or auth state unknown, do full check
-    isAuthenticated = await authStore.initializeAuth()
+    isAuthenticated = await authStore.initializeAuth();
   }
 
   if (to.meta.requiresAuth && !isAuthenticated) {
-    next('/login')
-  } else if (to.path === '/login' && isAuthenticated) {
-    next('/')
+    next("/login");
+  } else if (to.path === "/login" && isAuthenticated) {
+    next("/");
   } else {
     // Load saved baby selection only if authenticated
     if (isAuthenticated) {
-      authStore.loadSelectedBaby()
+      authStore.loadSelectedBaby();
     }
-    next()
+    next();
   }
-})
+});
 
 // Update document title after each navigation
 router.afterEach((to) => {
-  const appName = 'Bambino'
+  const appName = "Bambino";
   // Prefer explicit meta title, otherwise derive from route name
-  const pageTitle = to.meta && to.meta.title ? to.meta.title : (typeof to.name === 'string' ? capitalize(to.name) : '')
-  document.title = pageTitle ? `${appName} » ${pageTitle}` : appName
-})
+  const pageTitle = to.meta && to.meta.title ? to.meta.title : typeof to.name === "string" ? capitalize(to.name) : "";
+  document.title = pageTitle ? `${appName} » ${pageTitle}` : appName;
+});
 
-export default router
+export default router;

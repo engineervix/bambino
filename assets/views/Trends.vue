@@ -85,10 +85,10 @@
             <div v-if="statsStore.loading" class="text-center">
               <v-progress-circular indeterminate color="primary" />
             </div>
-             <div v-else-if="statsStore.error" class="text-center text-error">
+            <div v-else-if="statsStore.error" class="text-center text-error">
               {{ statsStore.error }}
             </div>
-            <div v-else class="text-h3 font-weight-bold text-center" style="color: #f59e0b;">
+            <div v-else class="text-h3 font-weight-bold text-center" style="color: #f59e0b">
               {{ avgSleep }}
             </div>
           </v-card-text>
@@ -119,157 +119,154 @@
 </template>
 
 <script setup>
-import { computed, onMounted } from 'vue'
-import { useStatsStore } from '@/stores/stats'
-import { formatTimeAgo } from '@/utils/datetime'
-import BarChart from '@/components/charts/BarChart.vue'
-import LineChart from '@/components/charts/LineChart.vue'
+import { computed, onMounted } from "vue";
+import { useStatsStore } from "@/stores/stats";
+import { formatTimeAgo } from "@/utils/datetime";
+import BarChart from "@/components/charts/BarChart.vue";
+import LineChart from "@/components/charts/LineChart.vue";
 
-const statsStore = useStatsStore()
+const statsStore = useStatsStore();
 
 // Fetch stats on mount (if not already loaded)
 onMounted(() => {
   if (!statsStore.lastUpdated) {
-    statsStore.fetchStats()
+    statsStore.fetchStats();
   }
-})
+});
 
 // --- Chart Data -------------------------------------------------------
 
 const avgCountsChartData = computed(() => {
-  const averages = statsStore.weekly?.daily_averages
-  if (!averages) return { labels: [], datasets: [] }
+  const averages = statsStore.weekly?.daily_averages;
+  if (!averages) return { labels: [], datasets: [] };
 
-  const labels = ['Diapers', 'Feeds']
-  const data = [
-    averages.diaper_per_day?.toFixed(1) || 0,
-    averages.feed_per_day?.toFixed(1) || 0
-  ]
+  const labels = ["Diapers", "Feeds"];
+  const data = [averages.diaper_per_day?.toFixed(1) || 0, averages.feed_per_day?.toFixed(1) || 0];
 
   return {
     labels,
     datasets: [
       {
-        label: 'Daily Average',
-        backgroundColor: ['#6366f1', '#ec4899'],
-        data
-      }
-    ]
-  }
-})
+        label: "Daily Average",
+        backgroundColor: ["#6366f1", "#ec4899"],
+        data,
+      },
+    ],
+  };
+});
 
 const avgSleep = computed(() => {
-  const hours = statsStore.weekly?.daily_averages?.sleep_hours_per_day
-  if (hours === undefined || hours === null) return '—'
-  return formatHoursMinutes(hours)
-})
+  const hours = statsStore.weekly?.daily_averages?.sleep_hours_per_day;
+  if (hours === undefined || hours === null) return "—";
+  return formatHoursMinutes(hours);
+});
 
 const weeklySleepTrendData = computed(() => {
-  const breakdown = statsStore.weekly?.daily_breakdown
+  const breakdown = statsStore.weekly?.daily_breakdown;
   if (!breakdown || breakdown.length === 0) {
-    return { labels: [], datasets: [] }
+    return { labels: [], datasets: [] };
   }
 
-  const labels = breakdown.map(d => new Date(d.date).toLocaleDateString(undefined, { weekday: 'short' }))
-  const data = breakdown.map(d => d.sleep_duration_hours.toFixed(1))
+  const labels = breakdown.map((d) => new Date(d.date).toLocaleDateString(undefined, { weekday: "short" }));
+  const data = breakdown.map((d) => d.sleep_duration_hours.toFixed(1));
 
   return {
     labels,
     datasets: [
       {
-        label: 'Sleep Hours',
-        borderColor: '#f59e0b',
-        backgroundColor: 'rgba(245, 158, 11, 0.2)',
+        label: "Sleep Hours",
+        borderColor: "#f59e0b",
+        backgroundColor: "rgba(245, 158, 11, 0.2)",
         tension: 0.1,
         fill: true,
-        data
-      }
-    ]
-  }
-})
+        data,
+      },
+    ],
+  };
+});
 
 const chartOptions = {
   responsive: true,
   maintainAspectRatio: false,
   plugins: {
     legend: {
-      display: false
-    }
+      display: false,
+    },
   },
   scales: {
     y: {
       beginAtZero: true,
       grid: {
-        color: 'rgba(255, 255, 255, 0.1)'
-      }
+        color: "rgba(255, 255, 255, 0.1)",
+      },
     },
     x: {
       grid: {
-        display: false
-      }
-    }
-  }
-}
+        display: false,
+      },
+    },
+  },
+};
 
 // --- Computed helpers -------------------------------------------------
 
 const lastFedDisplay = computed(() => {
-  const feed = statsStore.recent?.last_feed
-  if (!feed) return '—'
-  return formatTimeAgo(feed.time)
-})
+  const feed = statsStore.recent?.last_feed;
+  if (!feed) return "—";
+  return formatTimeAgo(feed.time);
+});
 
 const lastFeedAmount = computed(() => {
-  const feed = statsStore.recent?.last_feed
-  if (!feed?.amount_ml) return ''
-  return `${feed.amount_ml} ml`
-})
+  const feed = statsStore.recent?.last_feed;
+  if (!feed?.amount_ml) return "";
+  return `${feed.amount_ml} ml`;
+});
 
 const diapersToday = computed(() => {
-  return statsStore.daily?.counts?.diaper ?? '0'
-})
+  return statsStore.daily?.counts?.diaper ?? "0";
+});
 
 function formatHoursMinutes(hoursFloat) {
-  if (hoursFloat === undefined || hoursFloat === null) return ''
-  const totalMinutes = Math.round(hoursFloat * 60)
-  const h = Math.floor(totalMinutes / 60)
-  const m = totalMinutes % 60
-  return `${h > 0 ? h + 'h ' : ''}${m}m`
+  if (hoursFloat === undefined || hoursFloat === null) return "";
+  const totalMinutes = Math.round(hoursFloat * 60);
+  const h = Math.floor(totalMinutes / 60);
+  const m = totalMinutes % 60;
+  return `${h > 0 ? h + "h " : ""}${m}m`;
 }
 
 const sleepingDisplay = computed(() => {
-  if (!statsStore.recent) return '—'
+  if (!statsStore.recent) return "—";
 
   // Ongoing sleep
   if (statsStore.recent.currently_sleeping) {
-    const startISO = statsStore.daily?.last_activities?.sleep
+    const startISO = statsStore.daily?.last_activities?.sleep;
     if (startISO) {
-      const diffMs = Date.now() - new Date(startISO).getTime()
-      const minutes = Math.floor(diffMs / 60000)
-      const h = Math.floor(minutes / 60)
-      const m = minutes % 60
-      return `${h > 0 ? h + 'h ' : ''}${m}m`
+      const diffMs = Date.now() - new Date(startISO).getTime();
+      const minutes = Math.floor(diffMs / 60000);
+      const h = Math.floor(minutes / 60);
+      const m = minutes % 60;
+      return `${h > 0 ? h + "h " : ""}${m}m`;
     }
-    return 'Sleeping'
+    return "Sleeping";
   }
 
   // Not sleeping → last sleep duration
-  const dur = statsStore.recent.last_sleep?.duration_hours
+  const dur = statsStore.recent.last_sleep?.duration_hours;
   if (dur !== undefined && dur !== null) {
-    return formatHoursMinutes(dur)
+    return formatHoursMinutes(dur);
   }
-  return '—'
-})
+  return "—";
+});
 
 const activitiesWeek = computed(() => {
-  const avgs = statsStore.weekly?.daily_averages
-  if (!avgs) return '0'
-  let total = 0
+  const avgs = statsStore.weekly?.daily_averages;
+  if (!avgs) return "0";
+  let total = 0;
   for (const [key, value] of Object.entries(avgs)) {
-    if (key.endsWith('_per_day') && !key.includes('hours') && !key.includes('amount')) {
-      total += value * 7
+    if (key.endsWith("_per_day") && !key.includes("hours") && !key.includes("amount")) {
+      total += value * 7;
     }
   }
-  return Math.round(total)
-})
+  return Math.round(total);
+});
 </script>

@@ -3,7 +3,7 @@
 </template>
 
 <script setup>
-import { Line } from 'vue-chartjs'
+import { Line } from "vue-chartjs";
 import {
   Chart as ChartJS,
   Title,
@@ -13,29 +13,20 @@ import {
   PointElement,
   CategoryScale,
   LinearScale,
-  TimeScale
-} from 'chart.js'
-import { defineProps } from 'vue'
+  TimeScale,
+} from "chart.js";
+import { defineProps } from "vue";
 
-ChartJS.register(
-  Title,
-  Tooltip,
-  Legend,
-  LineElement,
-  PointElement,
-  CategoryScale,
-  LinearScale,
-  TimeScale
-)
+ChartJS.register(Title, Tooltip, Legend, LineElement, PointElement, CategoryScale, LinearScale, TimeScale);
 
 defineProps({
   chartData: {
     type: Object,
-    required: true
+    required: true,
   },
   chartOptions: {
     type: Object,
-    default: () => ({})
-  }
-})
+    default: () => ({}),
+  },
+});
 </script>

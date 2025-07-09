@@ -1,22 +1,17 @@
 <template>
   <div>
     <!-- Header with baby info -->
-    <v-sheet
-      class="hero-banner mb-8"
-      :height="bannerHeight"
-      elevation="0"
-      :style="{ opacity: headerOpacity }"
-    >
+    <v-sheet class="hero-banner mb-8" :height="bannerHeight" elevation="0" :style="{ opacity: headerOpacity }">
       <v-container class="fill-height d-flex align-center px-6" fluid>
         <div class="d-flex flex-column align-center justify-center text-center w-100">
           <v-avatar :size="avatarSize" class="mb-4 elevation-2">
             <v-img src="/baby.svg" cover />
           </v-avatar>
           <h1 class="text-h4 font-weight-bold mb-2">
-            {{ currentBaby ? currentBaby.name : 'Bambino' }}
+            {{ currentBaby ? currentBaby.name : "Bambino" }}
           </h1>
           <p class="text-subtitle-2 mb-0">
-            {{ currentBaby ? currentBaby.age_display : 'No profile' }} • {{ currentDate }}
+            {{ currentBaby ? currentBaby.age_display : "No profile" }} • {{ currentDate }}
           </p>
         </div>
       </v-container>
@@ -35,14 +30,7 @@
     <v-container>
       <v-row>
         <!-- Main activity types - 2 columns on larger screens -->
-        <v-col
-          v-for="activity in mainActivities"
-          :key="activity.id"
-          cols="12"
-          sm="6"
-          lg="4"
-          class="py-3"
-        >
+        <v-col v-for="activity in mainActivities" :key="activity.id" cols="12" sm="6" lg="4" class="py-3">
           <activity-card
             :title="activity.title"
             :description="activity.description"
@@ -144,12 +132,7 @@
     </v-fade-transition>
 
     <!-- Success snackbar -->
-    <v-snackbar
-      v-model="showSuccess"
-      color="success"
-      :timeout="3000"
-      location="bottom"
-    >
+    <v-snackbar v-model="showSuccess" color="success" :timeout="3000" location="bottom">
       <v-icon start>mdi-check-circle</v-icon>
       Activity saved successfully!
     </v-snackbar>
@@ -157,23 +140,23 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, markRaw } from 'vue'
-import { onUnmounted } from 'vue'
-import { format } from 'date-fns'
-import { useActivityStore } from '@/stores/activity'
-import { useAuthStore } from '@/stores/auth'
-import { storeToRefs } from 'pinia'
-import ActivityCard from '@/components/activity/ActivityCard.vue'
-import { useDisplay } from 'vuetify'
+import { ref, computed, onMounted, markRaw } from "vue";
+import { onUnmounted } from "vue";
+import { format } from "date-fns";
+import { useActivityStore } from "@/stores/activity";
+import { useAuthStore } from "@/stores/auth";
+import { storeToRefs } from "pinia";
+import ActivityCard from "@/components/activity/ActivityCard.vue";
+import { useDisplay } from "vuetify";
 
 // Form components
-import FeedForm from '@/components/forms/FeedForm.vue'
-import PumpForm from '@/components/forms/PumpForm.vue'
-import DiaperForm from '@/components/forms/DiaperForm.vue'
-import SleepForm from '@/components/forms/SleepForm.vue'
-import GrowthForm from '@/components/forms/GrowthForm.vue'
-import HealthForm from '@/components/forms/HealthForm.vue'
-import MilestoneForm from '@/components/forms/MilestoneForm.vue'
+import FeedForm from "@/components/forms/FeedForm.vue";
+import PumpForm from "@/components/forms/PumpForm.vue";
+import DiaperForm from "@/components/forms/DiaperForm.vue";
+import SleepForm from "@/components/forms/SleepForm.vue";
+import GrowthForm from "@/components/forms/GrowthForm.vue";
+import HealthForm from "@/components/forms/HealthForm.vue";
+import MilestoneForm from "@/components/forms/MilestoneForm.vue";
 
 // Mark components as raw to avoid reactivity overhead
 const formComponents = {
@@ -183,137 +166,137 @@ const formComponents = {
   sleep: markRaw(SleepForm),
   growth: markRaw(GrowthForm),
   health: markRaw(HealthForm),
-  milestone: markRaw(MilestoneForm)
-}
+  milestone: markRaw(MilestoneForm),
+};
 
-const activityStore = useActivityStore()
-const authStore = useAuthStore()
-const { currentBaby } = storeToRefs(authStore)
+const activityStore = useActivityStore();
+const authStore = useAuthStore();
+const { currentBaby } = storeToRefs(authStore);
 
 // State
-const showQuickAdd = ref(false)
-const showSuccess = ref(false)
-const currentActivity = ref(null)
+const showQuickAdd = ref(false);
+const showSuccess = ref(false);
+const currentActivity = ref(null);
 
 // Hero banner opacity
-const headerOpacity = ref(1)
+const headerOpacity = ref(1);
 
 // Responsive sizes
-const display = useDisplay()
-const bannerHeight = computed(() => (display.mdAndUp.value ? 240 : 180))
-const avatarSize = computed(() => (display.mdAndUp.value ? 96 : 72))
+const display = useDisplay();
+const bannerHeight = computed(() => (display.mdAndUp.value ? 240 : 180));
+const avatarSize = computed(() => (display.mdAndUp.value ? 96 : 72));
 
 function handleScroll() {
-  headerOpacity.value = Math.max(0, 1 - window.scrollY / 180)
+  headerOpacity.value = Math.max(0, 1 - window.scrollY / 180);
 }
 
 onMounted(() => {
-  window.addEventListener('scroll', handleScroll, { passive: true })
-})
+  window.addEventListener("scroll", handleScroll, { passive: true });
+});
 
 onUnmounted(() => {
-  window.removeEventListener('scroll', handleScroll)
-})
+  window.removeEventListener("scroll", handleScroll);
+});
 
 // Current date display
 const currentDate = computed(() => {
-  return format(new Date(), 'EEEE, MMM d')
-})
+  return format(new Date(), "EEEE, MMM d");
+});
 
 // Current form component
 const currentFormComponent = computed(() => {
-  if (!currentActivity.value) return null
-  return formComponents[currentActivity.value.id] || null
-})
+  if (!currentActivity.value) return null;
+  return formComponents[currentActivity.value.id] || null;
+});
 
 // Main activities (cards) - This was the issue!
 const mainActivities = computed(() => {
   return [
     {
-      id: 'feed',
-      title: 'Feed',
-      description: 'Track a feeding session',
-      icon: 'mdi-baby-bottle',
-      color: 'feed',
-      hasTimer: true
+      id: "feed",
+      title: "Feed",
+      description: "Track a feeding session",
+      icon: "mdi-baby-bottle",
+      color: "feed",
+      hasTimer: true,
     },
     {
-      id: 'pump',
-      title: 'Pump',
-      description: 'Track a pumping session',
-      icon: 'mdi-mother-nurse',
-      color: 'pump',
-      hasTimer: true
+      id: "pump",
+      title: "Pump",
+      description: "Track a pumping session",
+      icon: "mdi-mother-nurse",
+      color: "pump",
+      hasTimer: true,
     },
     {
-      id: 'diaper',
-      title: 'Diaper',
-      description: 'Track a diaper change',
-      icon: 'mdi-baby',
-      color: 'diaper',
-      hasTimer: false
+      id: "diaper",
+      title: "Diaper",
+      description: "Track a diaper change",
+      icon: "mdi-baby",
+      color: "diaper",
+      hasTimer: false,
     },
     {
-      id: 'sleep',
-      title: 'Sleep',
-      description: 'Track a sleep session',
-      icon: 'mdi-sleep',
-      color: 'sleep',
-      hasTimer: true
+      id: "sleep",
+      title: "Sleep",
+      description: "Track a sleep session",
+      icon: "mdi-sleep",
+      color: "sleep",
+      hasTimer: true,
     },
     {
-      id: 'milestone',
-      title: 'Baby Firsts',
-      description: 'Track memorable moments',
-      icon: 'mdi-party-popper',
-      color: 'milestone',
-      hasTimer: false
-    }
-  ]
-})
+      id: "milestone",
+      title: "Baby Firsts",
+      description: "Track memorable moments",
+      icon: "mdi-party-popper",
+      color: "milestone",
+      hasTimer: false,
+    },
+  ];
+});
 
 // Handlers
 function handleActivityClick(activity) {
   // For now, same as quick add
-  handleQuickAdd(activity)
+  handleQuickAdd(activity);
 }
 
 function handleQuickAdd(activity) {
   // Find the full activity config from store or use the passed activity
-  const fullActivity = activityStore.activityTypes.find(a => a.id === activity.id) || activity
-  currentActivity.value = fullActivity
-  showQuickAdd.value = true
+  const fullActivity = activityStore.activityTypes.find((a) => a.id === activity.id) || activity;
+  currentActivity.value = fullActivity;
+  showQuickAdd.value = true;
 }
 
 function handleFormSuccess(data) {
   // Close dialog
-  closeDialog()
+  closeDialog();
 
   // Show success message
-  showSuccess.value = true
+  showSuccess.value = true;
 
   // Optionally refresh stats
-  activityStore.getRecentStats()
+  activityStore.getRecentStats();
 }
 
 function closeDialog() {
-  showQuickAdd.value = false
+  showQuickAdd.value = false;
   // Clear current activity after animation
   setTimeout(() => {
-    currentActivity.value = null
-  }, 300)
+    currentActivity.value = null;
+  }, 300);
 }
 
 // Load recent stats on mount
 onMounted(async () => {
-  await activityStore.getRecentStats()
-})
+  await activityStore.getRecentStats();
+});
 </script>
 
 <style scoped>
 .hero-banner {
   position: relative;
-  background: linear-gradient(135deg, rgba(var(--v-theme-primary),0.35) 0%, rgba(var(--v-theme-accent1),0.35) 100%);
+  background: linear-gradient(135deg, rgba(var(--v-theme-primary), 0.35) 0%, rgba(var(--v-theme-accent1), 0.35) 100%);
   color: white;
   overflow: hidden;
   /* wave overscroll handles bottom edge */
@@ -326,6 +309,6 @@ onMounted(async () => {
   width: 100%;
   height: 60px;
   pointer-events: none;
-  color: rgba(255,255,255,0.5);
+  color: rgba(255, 255, 255, 0.5);
 }
 </style>

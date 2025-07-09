@@ -1,13 +1,7 @@
 <template>
   <v-form ref="form" @submit.prevent="handleSubmit">
     <!-- Breast selection -->
-    <v-btn-toggle
-      v-model="formData.breast"
-      mandatory
-      color="pump"
-      density="comfortable"
-      class="w-100 mb-4 d-flex"
-    >
+    <v-btn-toggle v-model="formData.breast" mandatory color="pump" density="comfortable" class="w-100 mb-4 d-flex">
       <v-btn value="left" class="flex-grow-1">
         <v-icon start>mdi-chevron-left</v-icon>
         Left
@@ -107,14 +101,7 @@
     />
 
     <!-- Standardized error display -->
-    <v-alert
-      v-if="formError"
-      type="error"
-      variant="tonal"
-      class="mb-4"
-      closable
-      @click:close="clearFormError"
-    >
+    <v-alert v-if="formError" type="error" variant="tonal" class="mb-4" closable @click:close="clearFormError">
       <div v-if="formError.title" class="font-weight-medium mb-1">{{ formError.title }}</div>
       <div>{{ formError.message || formError }}</div>
     </v-alert>
@@ -131,7 +118,7 @@
         :block="editMode || !hasTimer"
         class="flex-grow-1"
       >
-        {{ editMode ? 'Update Pump' : 'Save' }}
+        {{ editMode ? "Update Pump" : "Save" }}
       </v-btn>
 
       <!-- This button starts the timer, shown only for new entries -->
@@ -149,14 +136,7 @@
       </v-btn>
 
       <!-- This button stops the timer -->
-      <v-btn
-        v-if="useTimer"
-        color="success"
-        @click="stopTimer"
-        :loading="loading"
-        :disabled="loading"
-        block
-      >
+      <v-btn v-if="useTimer" color="success" @click="stopTimer" :loading="loading" :disabled="loading" block>
         <v-icon start>mdi-stop</v-icon>
         Stop & Save
       </v-btn>
@@ -165,252 +145,260 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
-import { useTimerStore } from '@/stores/timer'
-import { useActivityStore } from '@/stores/activity'
-import { useErrorHandling } from '@/composables/useErrorHandling'
-import { combineDateAndTime, getCurrentDate, getCurrentTime, getDateString, getTimeString } from '@/utils/datetime'
-import { validationRules, validateDateTime } from '@/utils/validation'
+import { ref, computed, onMounted, onUnmounted, watch } from "vue";
+import { useTimerStore } from "@/stores/timer";
+import { useActivityStore } from "@/stores/activity";
+import { useErrorHandling } from "@/composables/useErrorHandling";
+import { combineDateAndTime, getCurrentDate, getCurrentTime, getDateString, getTimeString } from "@/utils/datetime";
+import { validationRules, validateDateTime } from "@/utils/validation";
 
 const props = defineProps({
   hasTimer: {
     type: Boolean,
-    default: true
+    default: true,
   },
   activity: {
     type: Object,
-    default: null
+    default: null,
   },
   editMode: {
     type: Boolean,
-    default: false
-  }
-})
+    default: false,
+  },
+});
 
-const emit = defineEmits(['success', 'cancel'])
+const emit = defineEmits(["success", "cancel"]);
 
 // Stores
-const timerStore = useTimerStore()
-const activityStore = useActivityStore()
+const timerStore = useTimerStore();
+const activityStore = useActivityStore();
 
 // Error handling
-const { error: formError, loading, handleError, clearError: clearFormError, withErrorHandling } = useErrorHandling()
+const { error: formError, loading, handleError, clearError: clearFormError, withErrorHandling } = useErrorHandling();
 
 // Form state
-const form = ref(null)
-const useTimer = ref(false)
-const timerInterval = ref(null)
+const form = ref(null);
+const useTimer = ref(false);
+const timerInterval = ref(null);
 
 // Initialize form data from props or defaults
 const initializeFormData = () => {
   if (props.editMode && props.activity) {
-    const activity = props.activity
-    const startTime = new Date(activity.start_time)
+    const activity = props.activity;
+    const startTime = new Date(activity.start_time);
     return {
-      breast: activity.pump_data?.breast || 'both',
+      breast: activity.pump_data?.breast || "both",
       date: getDateString(startTime),
       time: getTimeString(startTime),
       amount_ml: activity.pump_data?.amount_ml || null,
       duration_minutes: activity.pump_data?.duration_minutes || null,
-      notes: activity.notes || ''
-    }
+      notes: activity.notes || "",
+    };
   }
   return {
-    breast: 'both',
+    breast: "both",
     date: getCurrentDate(),
     time: getCurrentTime(),
     amount_ml: null,
     duration_minutes: null,
-    notes: ''
-  }
-}
+    notes: "",
+  };
+};
 
-const formData = ref(initializeFormData())
+const formData = ref(initializeFormData());
 
 // Validation rules
 const rules = {
   required: validationRules.required,
   positiveNumber: validationRules.positiveNumber,
   positiveInteger: validationRules.positiveInteger,
-  maxLength: validationRules.maxLength
-}
+  maxLength: validationRules.maxLength,
+};
 
 // Timer display with persistent calculation
 const timerDisplay = computed(() => {
-  if (!timerStore.hasActiveTimer('pump')) return '00:00'
-  return timerStore.formattedDurations.pump || '00:00'
-})
+  if (!timerStore.hasActiveTimer("pump")) return "00:00";
+  return timerStore.formattedDurations.pump || "00:00";
+});
 
-const isTimerActive = computed(() => timerStore.hasActiveTimer('pump'))
+const isTimerActive = computed(() => timerStore.hasActiveTimer("pump"));
 
 // Watch for active timer changes (only if not in edit mode)
-watch(() => timerStore.hasActiveTimer('pump'), (hasTimer) => {
-  if (!props.editMode) {
-    useTimer.value = hasTimer
-    if (hasTimer) {
-      startTimerDisplay()
-    } else {
-      stopTimerDisplay()
+watch(
+  () => timerStore.hasActiveTimer("pump"),
+  (hasTimer) => {
+    if (!props.editMode) {
+      useTimer.value = hasTimer;
+      if (hasTimer) {
+        startTimerDisplay();
+      } else {
+        stopTimerDisplay();
+      }
     }
-  }
-}, { immediate: true })
+  },
+  { immediate: true },
+);
 
 onUnmounted(() => {
-  stopTimerDisplay()
-})
+  stopTimerDisplay();
+});
 
 // Initialize on mount
 onMounted(() => {
   // Don't show timer in edit mode
   if (props.editMode) {
-    useTimer.value = false
+    useTimer.value = false;
   }
-})
+});
 
 // Timer display management
 function startTimerDisplay() {
   if (timerInterval.value) {
-    clearInterval(timerInterval.value)
+    clearInterval(timerInterval.value);
   }
   timerInterval.value = setInterval(() => {
     // Force reactivity update
-  }, 1000)
+  }, 1000);
 }
 
 function stopTimerDisplay() {
   if (timerInterval.value) {
-    clearInterval(timerInterval.value)
-    timerInterval.value = null
+    clearInterval(timerInterval.value);
+    timerInterval.value = null;
   }
 }
 
 // Start timer
 async function startTimer() {
   const result = await withErrorHandling(async () => {
-    const response = await activityStore.startTimer('pump', {
+    const response = await activityStore.startTimer("pump", {
       pump_data: {
-        breast: formData.value.breast
+        breast: formData.value.breast,
       },
-      notes: formData.value.notes
-    })
+      notes: formData.value.notes,
+    });
 
     if (!response.success) {
-      throw new Error(response.error)
+      throw new Error(response.error);
     }
 
-    const success = timerStore.startTimer('pump', response.data.id)
+    const success = timerStore.startTimer("pump", response.data.id);
     if (!success) {
-      throw new Error('Failed to start local timer')
+      throw new Error("Failed to start local timer");
     }
 
-    return response.data
-  })
+    return response.data;
+  });
 
   if (!result.success) {
     handleError({
-      title: 'Timer Start Failed',
-      message: result.error
-    })
+      title: "Timer Start Failed",
+      message: result.error,
+    });
   }
 }
 
 // Stop timer
 async function stopTimer() {
-  const timer = timerStore.getActiveTimer('pump')
+  const timer = timerStore.getActiveTimer("pump");
   if (!timer?.activityId) {
     handleError({
-      title: 'Timer Error',
-      message: 'No active timer found'
-    })
-    return
+      title: "Timer Error",
+      message: "No active timer found",
+    });
+    return;
   }
 
   const result = await withErrorHandling(async () => {
-    const stopData = {}
+    const stopData = {};
     if (formData.value.amount_ml) {
-      stopData.amount_ml = formData.value.amount_ml
+      stopData.amount_ml = formData.value.amount_ml;
     }
     if (formData.value.notes) {
-      stopData.notes = formData.value.notes
+      stopData.notes = formData.value.notes;
     }
 
-    const response = await activityStore.stopTimer(timer.activityId, stopData)
+    const response = await activityStore.stopTimer(timer.activityId, stopData);
     if (!response.success) {
-      throw new Error(response.error)
+      throw new Error(response.error);
     }
 
-    timerStore.stopTimer('pump')
-    return response.data
-  })
+    timerStore.stopTimer("pump");
+    return response.data;
+  });
 
   if (result.success) {
-    emit('success', result.data)
+    emit("success", result.data);
   }
 }
 
 // Submit form
 async function handleSubmit() {
   // Validate form
-  const { valid } = await form.value.validate()
-  if (!valid) return
+  const { valid } = await form.value.validate();
+  if (!valid) return;
 
   // Validate date/time
-  const dateTimeError = validateDateTime(formData.value.date, formData.value.time)
+  const dateTimeError = validateDateTime(formData.value.date, formData.value.time);
   if (dateTimeError) {
     handleError({
-      title: 'Invalid Date/Time',
-      message: dateTimeError
-    })
-    return
+      title: "Invalid Date/Time",
+      message: dateTimeError,
+    });
+    return;
   }
 
   const result = await withErrorHandling(async () => {
-    const activityDateTime = combineDateAndTime(formData.value.date, formData.value.time)
+    const activityDateTime = combineDateAndTime(formData.value.date, formData.value.time);
 
     const activityData = {
-      type: 'pump',
+      type: "pump",
       start_time: activityDateTime,
       notes: formData.value.notes,
       pump_data: {
-        breast: formData.value.breast
-      }
-    }
+        breast: formData.value.breast,
+      },
+    };
 
     if (formData.value.amount_ml) {
-      activityData.pump_data.amount_ml = formData.value.amount_ml
+      activityData.pump_data.amount_ml = formData.value.amount_ml;
     }
 
     if (formData.value.duration_minutes) {
-      activityData.pump_data.duration_minutes = formData.value.duration_minutes
+      activityData.pump_data.duration_minutes = formData.value.duration_minutes;
       // Calculate end time
-      activityData.end_time = new Date(activityDateTime.getTime() + formData.value.duration_minutes * 60000)
+      activityData.end_time = new Date(activityDateTime.getTime() + formData.value.duration_minutes * 60000);
     }
 
-    let response
+    let response;
     if (props.editMode && props.activity) {
       // Update existing activity
-      response = await activityStore.updateActivity(props.activity.id, activityData)
+      response = await activityStore.updateActivity(props.activity.id, activityData);
     } else {
       // Create new activity
-      response = await activityStore.createActivity(activityData)
+      response = await activityStore.createActivity(activityData);
     }
 
     if (!response.success) {
-      throw new Error(response.error)
+      throw new Error(response.error);
     }
 
-    return response.data
-  })
+    return response.data;
+  });
 
   if (result.success) {
-    emit('success', result.data)
+    emit("success", result.data);
   }
 }
 
 // Watch for prop changes to reinitialize form data
-watch(() => props.activity, () => {
-  if (props.editMode && props.activity) {
-    formData.value = initializeFormData()
-  }
-}, { deep: true })
+watch(
+  () => props.activity,
+  () => {
+    if (props.editMode && props.activity) {
+      formData.value = initializeFormData();
+    }
+  },
+  { deep: true },
+);
 </script>
