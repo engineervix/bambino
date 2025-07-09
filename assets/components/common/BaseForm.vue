@@ -30,7 +30,7 @@
 </template>
 
 <script setup>
-import { ref, computed } from "vue";
+import { ref } from "vue";
 import { useFormHandling } from "@/composables/useErrorHandling";
 
 const props = defineProps({
@@ -62,7 +62,7 @@ const props = defineProps({
   },
 
   // Validation configuration
-  validateForm: {
+  enableValidation: {
     type: Boolean,
     default: true,
   },
@@ -109,7 +109,7 @@ async function handleSubmit() {
       });
     },
     {
-      validateForm: props.validateForm,
+      validateForm: props.enableValidation,
       successMessage: props.successMessage,
       onSuccess: (result, message) => {
         emit("success", { data: result, message });

@@ -155,7 +155,7 @@
 import { formatDuration, formatTimeAgo } from "@/utils/datetime";
 import { format, parseISO } from "date-fns";
 
-const props = defineProps({
+defineProps({
   activity: {
     type: Object,
     required: true,

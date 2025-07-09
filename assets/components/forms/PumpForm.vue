@@ -221,8 +221,6 @@ const timerDisplay = computed(() => {
   return timerStore.formattedDurations.pump || "00:00";
 });
 
-const isTimerActive = computed(() => timerStore.hasActiveTimer("pump"));
-
 // Watch for active timer changes (only if not in edit mode)
 watch(
   () => timerStore.hasActiveTimer("pump"),

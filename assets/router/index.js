@@ -13,31 +13,31 @@ const router = createRouter({
     {
       path: "/login",
       name: "login",
-      component: () => import("../views/Login.vue"),
+      component: () => import("../views/UserLogin.vue"),
       meta: { requiresAuth: false },
     },
     {
       path: "/",
       name: "activity",
-      component: () => import("../views/Activity.vue"),
+      component: () => import("../views/ActivityView.vue"),
       meta: { requiresAuth: true },
     },
     {
       path: "/history",
       name: "history",
-      component: () => import("../views/History.vue"),
+      component: () => import("../views/HistoryView.vue"),
       meta: { requiresAuth: true },
     },
     {
       path: "/trends",
       name: "trends",
-      component: () => import("../views/Trends.vue"),
+      component: () => import("../views/TrendsView.vue"),
       meta: { requiresAuth: true },
     },
     {
       path: "/account",
       name: "account",
-      component: () => import("../views/Account.vue"),
+      component: () => import("../views/UserAccount.vue"),
       meta: { requiresAuth: true },
     },
     // 404 – keep as last route

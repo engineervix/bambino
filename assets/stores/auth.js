@@ -24,7 +24,7 @@ export const useAuthStore = defineStore("auth", () => {
     error.value = null;
 
     try {
-      const response = await apiClient.post("/auth/login", credentials);
+      await apiClient.post("/auth/login", credentials);
       await checkAuth(); // Get full user data and babies
 
       // Initialize timers after successful auth
@@ -52,6 +52,7 @@ export const useAuthStore = defineStore("auth", () => {
       await apiClient.post("/auth/logout");
       clearAuthState();
       router.push("/login");
+      // eslint-disable-next-line no-unused-vars
     } catch (err) {
       // Even if logout fails, clear local state
       clearAuthState();
@@ -71,6 +72,7 @@ export const useAuthStore = defineStore("auth", () => {
 
       authChecked.value = true;
       return true;
+      // eslint-disable-next-line no-unused-vars
     } catch (err) {
       user.value = null;
       babies.value = [];

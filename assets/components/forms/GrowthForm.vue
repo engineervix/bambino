@@ -101,7 +101,7 @@ import { ref, computed, watch } from "vue";
 import { useActivityStore } from "@/stores/activity";
 import { useErrorHandling } from "@/composables/useErrorHandling";
 import { getCurrentDate, getDateString } from "@/utils/datetime";
-import { validationRules, validateAtLeastOne } from "@/utils/validation";
+import { validationRules } from "@/utils/validation";
 
 const props = defineProps({
   activity: {

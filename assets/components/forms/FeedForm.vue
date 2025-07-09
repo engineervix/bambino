@@ -230,8 +230,6 @@ const timerDisplay = computed(() => {
   return timerStore.formattedDurations.feed || "00:00";
 });
 
-const isTimerActive = computed(() => timerStore.hasActiveTimer("feed"));
-
 // Watch for active timer changes (only if not in edit mode)
 watch(
   () => timerStore.hasActiveTimer("feed"),
