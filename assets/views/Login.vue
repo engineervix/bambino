@@ -5,13 +5,13 @@
         <v-card class="pa-4">
           <v-card-title class="text-h4 text-center mb-4">
             <v-icon icon="mdi-baby-face" size="large" class="mr-2" />
-            Baby Tracker
+            Bambino
           </v-card-title>
-          
+
           <v-card-subtitle class="text-center mb-6">
             Sign in to continue
           </v-card-subtitle>
-          
+
           <v-card-text>
             <v-form @submit.prevent="handleLogin" ref="form">
               <v-text-field
@@ -23,7 +23,7 @@
                 :disabled="loading"
                 class="mb-4"
               />
-              
+
               <v-text-field
                 v-model="credentials.password"
                 label="Password"
@@ -34,7 +34,7 @@
                 :disabled="loading"
                 @keyup.enter="handleLogin"
               />
-              
+
               <v-alert
                 v-if="error"
                 type="error"
@@ -45,7 +45,7 @@
               >
                 {{ error }}
               </v-alert>
-              
+
               <v-btn
                 type="submit"
                 color="primary"
@@ -92,7 +92,7 @@ onMounted(async () => {
 
 async function handleLogin() {
   const { valid } = await form.value.validate()
-  
+
   if (valid) {
     await login(credentials.value)
   }

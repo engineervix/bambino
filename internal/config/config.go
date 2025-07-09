@@ -32,7 +32,7 @@ func Load() *Config {
 		DBPath:         getEnv("DB_PATH", "./bambino.db"),
 		DBHost:         getEnv("DB_HOST", "localhost"),
 		DBPort:         getEnv("DB_PORT", "5432"),
-		DBName:         getEnv("DB_NAME", "baby_tracker"),
+		DBName:         getEnv("DB_NAME", "baby"),
 		DBUser:         getEnv("DB_USER", "postgres"),
 		DBPassword:     getEnv("DB_PASSWORD", ""),
 		DBSSLMode:      getEnv("DB_SSLMODE", "disable"),

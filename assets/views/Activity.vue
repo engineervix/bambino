@@ -13,7 +13,7 @@
             <v-img src="/baby.svg" cover />
           </v-avatar>
           <h1 class="text-h4 font-weight-bold mb-2">
-            {{ currentBaby ? currentBaby.name : 'Baby Tracker' }}
+            {{ currentBaby ? currentBaby.name : 'Bambino' }}
           </h1>
           <p class="text-subtitle-2 mb-0">
             {{ currentBaby ? currentBaby.age_display : 'No profile' }} • {{ currentDate }}
@@ -35,8 +35,8 @@
     <v-container>
       <v-row>
         <!-- Main activity types - 2 columns on larger screens -->
-        <v-col 
-          v-for="activity in mainActivities" 
+        <v-col
+          v-for="activity in mainActivities"
           :key="activity.id"
           cols="12"
           sm="6"
@@ -90,7 +90,7 @@
                     <v-list-item-title>Medical Checkup</v-list-item-title>
                     <v-list-item-subtitle>Doctor visit, routine checkup</v-list-item-subtitle>
                   </v-list-item>
-                  
+
                   <v-list-item @click="handleQuickAdd({ id: 'health', subType: 'vaccine' })">
                     <template v-slot:prepend>
                       <v-icon :color="'health'">mdi-needle</v-icon>
@@ -98,7 +98,7 @@
                     <v-list-item-title>Vaccination</v-list-item-title>
                     <v-list-item-subtitle>Record vaccines received</v-list-item-subtitle>
                   </v-list-item>
-                  
+
                   <v-list-item @click="handleQuickAdd({ id: 'health', subType: 'illness' })">
                     <template v-slot:prepend>
                       <v-icon :color="'health'">mdi-thermometer</v-icon>
@@ -126,9 +126,9 @@
               <v-icon>mdi-close</v-icon>
             </v-btn>
           </v-card-title>
-          
+
           <v-divider></v-divider>
-          
+
           <v-card-text class="pa-4">
             <!-- Dynamic form component -->
             <component
@@ -288,10 +288,10 @@ function handleQuickAdd(activity) {
 function handleFormSuccess(data) {
   // Close dialog
   closeDialog()
-  
+
   // Show success message
   showSuccess.value = true
-  
+
   // Optionally refresh stats
   activityStore.getRecentStats()
 }

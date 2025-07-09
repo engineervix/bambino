@@ -22,8 +22,8 @@ import (
 
 var serveCmd = &cobra.Command{
 	Use:   "serve",
-	Short: "Start the Baby Tracker server",
-	Long:  `Starts the web server for the Baby Tracker application.`,
+	Short: "Start the Bambino server",
+	Long:  `Starts the web server for the Bambino application.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		// Get port flag value
 		port, _ := cmd.Flags().GetString("port")
@@ -100,7 +100,7 @@ func runServer(overridePort string) {
 	// Public routes
 	e.GET("/", func(c echo.Context) error {
 		return c.JSON(200, map[string]string{
-			"message": "Baby Tracker API",
+			"message": "Bambino API",
 			"version": "1.0.0",
 		})
 	})
