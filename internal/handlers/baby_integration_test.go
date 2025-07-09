@@ -41,6 +41,7 @@ func TestBabyProfileIntegration(t *testing.T) {
 
 		// Create activity for first baby (using ctx.Baby)
 		activityReq := ActivityRequest{
+			BabyID:    ctx.Baby.ID.String(),
 			Type:      "feed",
 			StartTime: time.Now(),
 			FeedData: &FeedData{

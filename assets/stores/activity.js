@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import apiClient from '@/api/client'
+import { useAuthStore } from './auth'
 
 export const useActivityStore = defineStore('activity', () => {
   // State
@@ -79,10 +80,22 @@ export const useActivityStore = defineStore('activity', () => {
   async function createActivity(activityData) {
     loading.value = true
     error.value = null
-    
+
+    const authStore = useAuthStore()
+    const babyId = authStore.currentBaby?.id
+
+    if (!babyId) {
+      error.value = 'No baby selected'
+      loading.value = false
+      return { success: false, error: 'No baby selected' }
+    }
+
     try {
-      const response = await apiClient.post('/activities', activityData)
-      
+      const response = await apiClient.post('/activities', {
+        ...activityData,
+        baby_id: babyId
+      })
+
       // Add to beginning of activities list if we're on first page
       if (pagination.value.page === 1) {
         activities.value.unshift(response.data)
@@ -91,7 +104,7 @@ export const useActivityStore = defineStore('activity', () => {
           activities.value.pop()
         }
       }
-      
+
       return { success: true, data: response.data }
     } catch (err) {
       error.value = err.message
@@ -104,7 +117,7 @@ export const useActivityStore = defineStore('activity', () => {
   async function getActivity(id) {
     loading.value = true
     error.value = null
-    
+
     try {
       const response = await apiClient.get(`/activities/${id}`)
       currentActivity.value = response.data
@@ -120,16 +133,16 @@ export const useActivityStore = defineStore('activity', () => {
   async function updateActivity(id, activityData) {
     loading.value = true
     error.value = null
-    
+
     try {
       const response = await apiClient.put(`/activities/${id}`, activityData)
-      
+
       // Update in activities list
       const index = activities.value.findIndex(a => a.id === id)
       if (index !== -1) {
         activities.value[index] = response.data
       }
-      
+
       currentActivity.value = response.data
       return { success: true, data: response.data }
     } catch (err) {
@@ -143,17 +156,17 @@ export const useActivityStore = defineStore('activity', () => {
   async function deleteActivity(id) {
     loading.value = true
     error.value = null
-    
+
     try {
       await apiClient.delete(`/activities/${id}`)
-      
+
       // Remove from activities list
       const index = activities.value.findIndex(a => a.id === id)
       if (index !== -1) {
         activities.value.splice(index, 1)
         pagination.value.total--
       }
-      
+
       return { success: true }
     } catch (err) {
       error.value = err.message
@@ -166,10 +179,10 @@ export const useActivityStore = defineStore('activity', () => {
   async function fetchActivities(params = {}) {
     loading.value = true
     error.value = null
-    
+
     try {
       const response = await apiClient.get('/activities', { params })
-      
+
       // Handle pagination properly
       if (params.page > 1) {
         // Append for pagination
@@ -178,14 +191,14 @@ export const useActivityStore = defineStore('activity', () => {
         // Replace for new queries
         activities.value = response.data.activities
       }
-      
+
       pagination.value = {
         page: response.data.page,
         pageSize: response.data.page_size,
         total: response.data.total,
         totalPages: response.data.total_pages
       }
-      
+
       return { success: true, data: response.data }
     } catch (err) {
       error.value = err.message
@@ -199,10 +212,20 @@ export const useActivityStore = defineStore('activity', () => {
   async function startTimer(type, initialData = {}) {
     loading.value = true
     error.value = null
-    
+
+    const authStore = useAuthStore()
+    const babyId = authStore.currentBaby?.id
+
+    if (!babyId) {
+      error.value = 'No baby selected'
+      loading.value = false
+      return { success: false, error: 'No baby selected' }
+    }
+
     try {
       const response = await apiClient.post('/activities/timer/start', {
         type,
+        baby_id: babyId,
         ...initialData
       })
       return { success: true, data: response.data }
@@ -217,16 +240,16 @@ export const useActivityStore = defineStore('activity', () => {
   async function stopTimer(activityId, additionalData = {}) {
     loading.value = true
     error.value = null
-    
+
     try {
       const response = await apiClient.put(`/activities/timer/${activityId}/stop`, additionalData)
-      
+
       // Update activity in list if it exists
       const index = activities.value.findIndex(a => a.id === activityId)
       if (index !== -1) {
         activities.value[index] = response.data
       }
-      
+
       return { success: true, data: response.data }
     } catch (err) {
       error.value = err.message
@@ -287,7 +310,7 @@ export const useActivityStore = defineStore('activity', () => {
     currentActivity,
     pagination,
     activityTypes,
-    
+
     // Actions
     createActivity,
     getActivity,
@@ -299,7 +322,7 @@ export const useActivityStore = defineStore('activity', () => {
     getRecentStats,
     getDailyStats,
     getWeeklyStats,
-    
+
     // Utilities
     clearError,
     clearCurrentActivity,

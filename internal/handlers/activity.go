@@ -60,6 +60,7 @@ type MilestoneData struct {
 
 // ActivityRequest represents the request body for creating/updating activities
 type ActivityRequest struct {
+	BabyID    string     `json:"baby_id,omitempty"`
 	Type      string     `json:"type" validate:"required,oneof=feed pump diaper sleep growth health milestone"`
 	StartTime time.Time  `json:"start_time" validate:"required"`
 	EndTime   *time.Time `json:"end_time,omitempty"`
@@ -77,6 +78,7 @@ type ActivityRequest struct {
 
 // TimerStartRequest for starting activity timers
 type TimerStartRequest struct {
+	BabyID    string     `json:"baby_id,omitempty"`
 	Type      string     `json:"type" validate:"required,oneof=feed pump sleep"`
 	Notes     string     `json:"notes,omitempty" validate:"max=1000"`
 	FeedData  *FeedData  `json:"feed_data,omitempty"`
@@ -246,9 +248,24 @@ func CreateActivity(c echo.Context) error {
 	}
 
 	// Get user's baby
-	baby, err := getUserBaby(db, userID)
-	if err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError, "failed to get baby")
+	var baby *models.Baby
+	var err error
+
+	// A baby ID can be optionally provided to associate activity with a specific baby.
+	// If not provided, the most recently created baby for the user is used.
+	if req.BabyID != "" {
+		baby, err = getBabyByIDForUser(db, req.BabyID, userID)
+		if err != nil {
+			if err == gorm.ErrRecordNotFound {
+				return echo.NewHTTPError(http.StatusNotFound, "baby not found or does not belong to user")
+			}
+			return echo.NewHTTPError(http.StatusInternalServerError, "failed to get baby")
+		}
+	} else {
+		baby, err = getUserBaby(db, userID)
+		if err != nil {
+			return echo.NewHTTPError(http.StatusInternalServerError, "failed to get baby")
+		}
 	}
 
 	// Start transaction
@@ -536,9 +553,22 @@ func StartActivityTimer(c echo.Context) error {
 	}
 
 	// Get user's baby
-	baby, err := getUserBaby(db, userID)
-	if err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError, "failed to get baby")
+	var baby *models.Baby
+	var err error
+	if req.BabyID != "" {
+		baby, err = getBabyByIDForUser(db, req.BabyID, userID)
+		if err != nil {
+			if err == gorm.ErrRecordNotFound {
+				return echo.NewHTTPError(http.StatusNotFound, "baby not found")
+			}
+			return echo.NewHTTPError(http.StatusInternalServerError, "failed to get baby")
+		}
+	} else {
+		// Fallback to the latest baby if no ID is provided
+		baby, err = getUserBaby(db, userID)
+		if err != nil {
+			return echo.NewHTTPError(http.StatusInternalServerError, "failed to get baby")
+		}
 	}
 
 	// Start transaction
@@ -753,7 +783,8 @@ func StopActivityTimer(c echo.Context) error {
 
 // Helper functions
 
-// getUserBaby gets the user's baby (assumes one baby per user for now)
+// getUserBaby gets the user's most recently created baby.
+// This is used as a fallback when a specific baby ID is not provided.
 func getUserBaby(db *gorm.DB, userID string) (*models.Baby, error) {
 	uid, err := uuid.Parse(userID)
 	if err != nil {
@@ -761,10 +792,29 @@ func getUserBaby(db *gorm.DB, userID string) (*models.Baby, error) {
 	}
 
 	var baby models.Baby
-	if err := db.Where("user_id = ?", uid).First(&baby).Error; err != nil {
+	if err := db.Where("user_id = ?", uid).Order("created_at DESC").First(&baby).Error; err != nil {
 		return nil, err
 	}
 
+	return &baby, nil
+}
+
+// getBabyByIDForUser retrieves a baby by its ID, ensuring it belongs to the specified user.
+func getBabyByIDForUser(db *gorm.DB, babyIDStr string, userIDStr string) (*models.Baby, error) {
+	babyID, err := uuid.Parse(babyIDStr)
+	if err != nil {
+		return nil, fmt.Errorf("invalid baby ID format: %w", err)
+	}
+
+	userID, err := uuid.Parse(userIDStr)
+	if err != nil {
+		return nil, fmt.Errorf("invalid user ID format: %w", err)
+	}
+
+	var baby models.Baby
+	if err := db.Where("id = ? AND user_id = ?", babyID, userID).First(&baby).Error; err != nil {
+		return nil, err
+	}
 	return &baby, nil
 }
 
