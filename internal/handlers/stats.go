@@ -45,11 +45,20 @@ type LastSleepInfo struct {
 	DurationHours *float64   `json:"duration_hours"`
 }
 
+// DailyDataPoint represents the stats for a single day in a weekly breakdown
+type DailyDataPoint struct {
+	Date               string  `json:"date"`
+	DiaperCount        int     `json:"diaper_count"`
+	FeedCount          int     `json:"feed_count"`
+	SleepDurationHours float64 `json:"sleep_duration_hours"`
+}
+
 // WeeklyStatsResponse represents weekly overview
 type WeeklyStatsResponse struct {
 	StartDate      string             `json:"start_date"`
 	EndDate        string             `json:"end_date"`
 	DailyAverages  map[string]float64 `json:"daily_averages"`
+	DailyBreakdown []DailyDataPoint   `json:"daily_breakdown"`
 	GrowthThisWeek *WeeklyGrowthInfo  `json:"growth_this_week"`
 }
 
@@ -270,8 +279,12 @@ func GetWeeklyStats(c echo.Context) error {
 	activityTypes := []string{"feed", "diaper", "sleep", "pump"}
 	for _, actType := range activityTypes {
 		dailyCounts[actType] = make([]int, 7)
-		dailyTotals[actType] = make([]float64, 7)
 	}
+
+	// Initialize maps for totals that need more than just counts
+	dailyTotals["sleep_hours"] = make([]float64, 7)
+	dailyTotals["feed_amount_ml"] = make([]float64, 7)
+	dailyTotals["pump_amount_ml"] = make([]float64, 7)
 
 	for _, activity := range activities {
 		dayIndex := int(activity.StartTime.Sub(startDate).Hours() / 24)
@@ -286,16 +299,16 @@ func GetWeeklyStats(c echo.Context) error {
 			switch activity.Type {
 			case models.ActivityTypeFeed:
 				if activity.FeedActivity != nil && activity.FeedActivity.AmountML != nil {
-					dailyTotals["feed_amount_ml"] = append(dailyTotals["feed_amount_ml"], *activity.FeedActivity.AmountML)
+					dailyTotals["feed_amount_ml"][dayIndex] += *activity.FeedActivity.AmountML
 				}
 			case models.ActivityTypePump:
 				if activity.PumpActivity != nil && activity.PumpActivity.AmountML != nil {
-					dailyTotals["pump_amount_ml"] = append(dailyTotals["pump_amount_ml"], *activity.PumpActivity.AmountML)
+					dailyTotals["pump_amount_ml"][dayIndex] += *activity.PumpActivity.AmountML
 				}
 			case models.ActivityTypeSleep:
 				if activity.EndTime != nil {
 					duration := activity.EndTime.Sub(activity.StartTime).Hours()
-					dailyTotals["sleep_hours"] = append(dailyTotals["sleep_hours"], duration)
+					dailyTotals["sleep_hours"][dayIndex] += duration
 				}
 			}
 		}
@@ -314,20 +327,29 @@ func GetWeeklyStats(c echo.Context) error {
 	}
 
 	// Amount/duration averages
-	if len(dailyTotals["feed_amount_ml"]) > 0 {
-		total := 0.0
-		for _, amount := range dailyTotals["feed_amount_ml"] {
-			total += amount
-		}
-		averages["feed_amount_ml_per_day"] = total / 7.0
+	if totalFeeds := sumInts(dailyCounts["feed"]); totalFeeds > 0 {
+		totalAmount := sumFloats(dailyTotals["feed_amount_ml"])
+		averages["feed_amount_ml_per_feed"] = totalAmount / float64(totalFeeds)
+	} else {
+		averages["feed_amount_ml_per_feed"] = 0
 	}
+	averages["feed_amount_ml_per_day"] = sumFloats(dailyTotals["feed_amount_ml"]) / 7.0
+	averages["sleep_hours_per_day"] = sumFloats(dailyTotals["sleep_hours"]) / 7.0
 
-	if len(dailyTotals["sleep_hours"]) > 0 {
-		total := 0.0
-		for _, hours := range dailyTotals["sleep_hours"] {
-			total += hours
+	// Prepare daily breakdown
+	dailyBreakdown := make([]DailyDataPoint, 7)
+	for i := 0; i < 7; i++ {
+		date := startDate.AddDate(0, 0, i)
+		diaperCount := dailyCounts["diaper"][i]
+		feedCount := dailyCounts["feed"][i]
+		sleepDuration := dailyTotals["sleep_hours"][i]
+
+		dailyBreakdown[i] = DailyDataPoint{
+			Date:               date.Format("2006-01-02"),
+			DiaperCount:        diaperCount,
+			FeedCount:          feedCount,
+			SleepDurationHours: sleepDuration,
 		}
-		averages["sleep_hours_per_day"] = total / 7.0
 	}
 
 	// Get growth measurements for the week
@@ -363,8 +385,25 @@ func GetWeeklyStats(c echo.Context) error {
 		StartDate:      startDate.Format("2006-01-02"),
 		EndDate:        endDate.Format("2006-01-02"),
 		DailyAverages:  averages,
+		DailyBreakdown: dailyBreakdown,
 		GrowthThisWeek: growthInfo,
 	}
 
 	return c.JSON(http.StatusOK, response)
+}
+
+func sumInts(slice []int) int {
+	total := 0
+	for _, v := range slice {
+		total += v
+	}
+	return total
+}
+
+func sumFloats(slice []float64) float64 {
+	total := 0.0
+	for _, v := range slice {
+		total += v
+	}
+	return total
 }

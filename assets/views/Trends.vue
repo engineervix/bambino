@@ -56,6 +56,65 @@
         </v-card>
       </v-col>
     </v-row>
+
+    <!-- Weekly Averages -->
+    <v-row>
+      <!-- Avg Counts -->
+      <v-col cols="12" md="6">
+        <v-card elevation="1">
+          <v-card-title>Average Daily Counts</v-card-title>
+          <v-card-text>
+            <div v-if="statsStore.loading" class="text-center py-10">
+              <v-progress-circular indeterminate color="primary" />
+            </div>
+            <div v-else-if="statsStore.error" class="text-center text-error py-10">
+              {{ statsStore.error }}
+            </div>
+            <div v-else style="height: 250px">
+              <BarChart :chart-data="avgCountsChartData" :chart-options="chartOptions" />
+            </div>
+          </v-card-text>
+        </v-card>
+      </v-col>
+
+      <!-- Avg Sleep -->
+      <v-col cols="12" md="6">
+        <v-card elevation="1" class="fill-height">
+          <v-card-title>Average Daily Sleep</v-card-title>
+          <v-card-text class="d-flex align-center justify-center">
+            <div v-if="statsStore.loading" class="text-center">
+              <v-progress-circular indeterminate color="primary" />
+            </div>
+             <div v-else-if="statsStore.error" class="text-center text-error">
+              {{ statsStore.error }}
+            </div>
+            <div v-else class="text-h3 font-weight-bold text-center" style="color: #f59e0b;">
+              {{ avgSleep }}
+            </div>
+          </v-card-text>
+        </v-card>
+      </v-col>
+    </v-row>
+
+    <!-- Weekly Sleep Trend Chart -->
+    <v-row>
+      <v-col cols="12">
+        <v-card elevation="1">
+          <v-card-title>Weekly Sleep Trend</v-card-title>
+          <v-card-text>
+            <div v-if="statsStore.loading" class="text-center py-10">
+              <v-progress-circular indeterminate color="primary" />
+            </div>
+            <div v-else-if="statsStore.error" class="text-center text-error py-10">
+              {{ statsStore.error }}
+            </div>
+            <div v-else style="height: 300px">
+              <LineChart :chart-data="weeklySleepTrendData" :chart-options="chartOptions" />
+            </div>
+          </v-card-text>
+        </v-card>
+      </v-col>
+    </v-row>
   </v-container>
 </template>
 
@@ -63,6 +122,8 @@
 import { computed, onMounted } from 'vue'
 import { useStatsStore } from '@/stores/stats'
 import { formatTimeAgo } from '@/utils/datetime'
+import BarChart from '@/components/charts/BarChart.vue'
+import LineChart from '@/components/charts/LineChart.vue'
 
 const statsStore = useStatsStore()
 
@@ -72,6 +133,83 @@ onMounted(() => {
     statsStore.fetchStats()
   }
 })
+
+// --- Chart Data -------------------------------------------------------
+
+const avgCountsChartData = computed(() => {
+  const averages = statsStore.weekly?.daily_averages
+  if (!averages) return { labels: [], datasets: [] }
+
+  const labels = ['Diapers', 'Feeds']
+  const data = [
+    averages.diaper_per_day?.toFixed(1) || 0,
+    averages.feed_per_day?.toFixed(1) || 0
+  ]
+
+  return {
+    labels,
+    datasets: [
+      {
+        label: 'Daily Average',
+        backgroundColor: ['#6366f1', '#ec4899'],
+        data
+      }
+    ]
+  }
+})
+
+const avgSleep = computed(() => {
+  const hours = statsStore.weekly?.daily_averages?.sleep_hours_per_day
+  if (hours === undefined || hours === null) return '—'
+  return formatHoursMinutes(hours)
+})
+
+const weeklySleepTrendData = computed(() => {
+  const breakdown = statsStore.weekly?.daily_breakdown
+  if (!breakdown || breakdown.length === 0) {
+    return { labels: [], datasets: [] }
+  }
+
+  const labels = breakdown.map(d => new Date(d.date).toLocaleDateString(undefined, { weekday: 'short' }))
+  const data = breakdown.map(d => d.sleep_duration_hours.toFixed(1))
+
+  return {
+    labels,
+    datasets: [
+      {
+        label: 'Sleep Hours',
+        borderColor: '#f59e0b',
+        backgroundColor: 'rgba(245, 158, 11, 0.2)',
+        tension: 0.1,
+        fill: true,
+        data
+      }
+    ]
+  }
+})
+
+const chartOptions = {
+  responsive: true,
+  maintainAspectRatio: false,
+  plugins: {
+    legend: {
+      display: false
+    }
+  },
+  scales: {
+    y: {
+      beginAtZero: true,
+      grid: {
+        color: 'rgba(255, 255, 255, 0.1)'
+      }
+    },
+    x: {
+      grid: {
+        display: false
+      }
+    }
+  }
+}
 
 // --- Computed helpers -------------------------------------------------
 

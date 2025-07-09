@@ -168,6 +168,7 @@ func TestDatabaseMigration_Integration(t *testing.T) {
 	cfg := &config.Config{
 		DBType: "sqlite",
 		DBPath: tmpfile.Name(),
+		Env:    "test",
 	}
 
 	db, err := database.Connect(cfg)
