@@ -15,7 +15,6 @@ import {
   LinearScale,
   TimeScale,
 } from "chart.js";
-import { defineProps } from "vue";
 
 ChartJS.register(Title, Tooltip, Legend, LineElement, PointElement, CategoryScale, LinearScale, TimeScale);
 
