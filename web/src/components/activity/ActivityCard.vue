@@ -1,6 +1,6 @@
 <template>
   <v-card
-    :color="color"
+    :color="bgColor"
     class="activity-card"
     rounded="lg"
     elevation="2"
@@ -14,7 +14,7 @@
     <!-- Content area -->
     <v-card-text class="pa-4">
       <div class="activity-content">
-        <v-icon :icon="icon" size="48" class="mb-3" />
+        <v-icon :icon="icon" :color="color" size="48" class="mb-3" />
         <p class="text-body-1">{{ description }}</p>
       </div>
     </v-card-text>
@@ -24,7 +24,8 @@
       <v-btn
         icon
         size="large"
-        color="primary"
+        :color="color"
+        variant="tonal"
         elevation="2"
         @click.stop="$emit('add')"
       >
@@ -35,7 +36,9 @@
 </template>
 
 <script setup>
-defineProps({
+import { computed } from 'vue'
+
+const props = defineProps({
   title: {
     type: String,
     required: true
@@ -53,6 +56,9 @@ defineProps({
     default: 'primary'
   }
 })
+
+// Derive background tint token (e.g., "feed" -> "feed-bg")
+const bgColor = computed(() => `${props.color}-bg`)
 
 defineEmits(['click', 'add'])
 </script>

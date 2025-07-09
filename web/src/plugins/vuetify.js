@@ -26,7 +26,15 @@ export default createVuetify({
           sleep: '#3F51B5',
           growth: '#4CAF50',
           health: '#9C27B0',
-          milestone: '#FF5722'
+          milestone: '#FF5722',
+          // Background tints (surface-tone variants)
+          'feed-bg': '#332700',     // dark amber tint
+          'pump-bg': '#3B0617',     // muted rose tint
+          'diaper-bg': '#2A231F',   // mocha tint
+          'sleep-bg': '#09123B',    // indigo tint
+          'growth-bg': '#0E2910',   // deep green tint
+          'health-bg': '#1A0D26',   // violet tint
+          'milestone-bg': '#331407' // orange tint
         }
       }
     }

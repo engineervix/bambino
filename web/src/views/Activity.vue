@@ -47,15 +47,15 @@
           <v-expansion-panels variant="accordion">
             <!-- Growth section -->
             <v-expansion-panel>
-              <v-expansion-panel-title color="growth">
-                <v-icon class="mr-3">mdi-human-male-height</v-icon>
+              <v-expansion-panel-title color="growth-bg">
+                <v-icon :color="'growth'" class="mr-3">mdi-human-male-height</v-icon>
                 <span class="text-h6">Growth</span>
               </v-expansion-panel-title>
               <v-expansion-panel-text>
                 <v-list>
                   <v-list-item @click="handleQuickAdd({ id: 'growth' })">
                     <template v-slot:prepend>
-                      <v-icon>mdi-human-male-height</v-icon>
+                      <v-icon :color="'growth'">mdi-human-male-height</v-icon>
                     </template>
                     <v-list-item-title>Record Measurements</v-list-item-title>
                     <v-list-item-subtitle>Weight, height, head circumference</v-list-item-subtitle>
@@ -66,15 +66,15 @@
 
             <!-- Health section -->
             <v-expansion-panel>
-              <v-expansion-panel-title color="health">
-                <v-icon class="mr-3">mdi-medical-bag</v-icon>
+              <v-expansion-panel-title color="health-bg">
+                <v-icon :color="'health'" class="mr-3">mdi-medical-bag</v-icon>
                 <span class="text-h6">Health</span>
               </v-expansion-panel-title>
               <v-expansion-panel-text>
                 <v-list>
                   <v-list-item @click="handleQuickAdd({ id: 'health', subType: 'checkup' })">
                     <template v-slot:prepend>
-                      <v-icon>mdi-stethoscope</v-icon>
+                      <v-icon :color="'health'">mdi-stethoscope</v-icon>
                     </template>
                     <v-list-item-title>Medical Checkup</v-list-item-title>
                     <v-list-item-subtitle>Doctor visit, routine checkup</v-list-item-subtitle>
@@ -82,7 +82,7 @@
                   
                   <v-list-item @click="handleQuickAdd({ id: 'health', subType: 'vaccine' })">
                     <template v-slot:prepend>
-                      <v-icon>mdi-needle</v-icon>
+                      <v-icon :color="'health'">mdi-needle</v-icon>
                     </template>
                     <v-list-item-title>Vaccination</v-list-item-title>
                     <v-list-item-subtitle>Record vaccines received</v-list-item-subtitle>
@@ -90,7 +90,7 @@
                   
                   <v-list-item @click="handleQuickAdd({ id: 'health', subType: 'illness' })">
                     <template v-slot:prepend>
-                      <v-icon>mdi-thermometer</v-icon>
+                      <v-icon :color="'health'">mdi-thermometer</v-icon>
                     </template>
                     <v-list-item-title>Illness</v-list-item-title>
                     <v-list-item-subtitle>Symptoms, treatment</v-list-item-subtitle>
