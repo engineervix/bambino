@@ -1,0 +1,17 @@
+services:
+  db:
+    build:
+      context: ./db
+      dockerfile: Dockerfile
+    container_name: baby-db
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: baby
+      POSTGRES_PASSWORD: baby
+      POSTGRES_DB: baby
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+
+volumes:
+  postgres-data:
