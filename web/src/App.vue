@@ -1,35 +1,47 @@
 <template>
   <v-app>
+    <!-- Top navigation bar (desktop) -->
+    <v-app-bar
+      v-if="showTopBar"
+      app
+      color="surface"
+      elevation="1"
+      density="comfortable"
+    >
+      <v-toolbar-title class="text-h6 font-weight-medium d-flex align-center">
+        <v-img
+          src="/baby.svg"
+          alt="Logo"
+          width="32"
+          height="32"
+          cover
+          class="d-none d-md-flex"
+        />
+      </v-toolbar-title>
+
+      <v-spacer />
+
+      <div class="d-flex align-center">
+        <v-btn
+          v-for="item in navItems"
+          :key="'top-' + item.value"
+          :to="item.to"
+          variant="text"
+          :class="{ 'text-primary': activeTab === item.value }"
+          size="small"
+        >
+          <v-icon class="me-1">{{ activeTab === item.value ? item.iconActive : item.iconInactive }}</v-icon>
+          <span class="text-capitalize d-none d-lg-inline">{{ item.label }}</span>
+        </v-btn>
+      </div>
+    </v-app-bar>
+
     <!-- Main content -->
     <v-main>
-      <!-- Desktop / tablet navigation drawer -->
-      <v-navigation-drawer
-        v-if="showDrawer"
-        permanent
-        rail
-        class="elevation-1"
-        width="72"
-      >
-        <v-list density="compact" nav>
-          <v-list-item
-            v-for="item in navItems"
-            :key="item.value"
-            :to="item.to"
-            :active="activeTab === item.value"
-            rounded="xl"
-          >
-            <template #prepend>
-              <v-icon>{{ activeTab === item.value ? item.iconActive : item.iconInactive }}</v-icon>
-            </template>
-            <v-list-item-title>{{ item.label }}</v-list-item-title>
-          </v-list-item>
-        </v-list>
-      </v-navigation-drawer>
-
       <router-view />
     </v-main>
 
-    <!-- Bottom navigation (only show when authenticated and not on login page) -->
+    <!-- Bottom navigation (only show when authenticated and on small screens) -->
     <v-bottom-navigation
       v-if="showBottomNav"
       v-model="activeTab"
@@ -68,7 +80,7 @@ const isLoginPage = computed(() => route.name === 'login')
 const display = useDisplay()
 
 const showBottomNav = computed(() => isAuthenticated.value && !isLoginPage.value && display.smAndDown.value)
-const showDrawer = computed(() => isAuthenticated.value && !isLoginPage.value && display.mdAndUp.value)
+const showTopBar = computed(() => isAuthenticated.value && !isLoginPage.value && display.mdAndUp.value)
 
 const navItems = [
   {
