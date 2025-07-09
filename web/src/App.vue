@@ -22,8 +22,9 @@
       <v-spacer />
 
       <div class="d-flex align-center">
+        <!-- Primary nav items except Account -->
         <v-btn
-          v-for="item in navItems"
+          v-for="item in topNavItems"
           :key="'top-' + item.value"
           :to="item.to"
           variant="text"
@@ -33,6 +34,31 @@
           <v-icon class="me-1">{{ activeTab === item.value ? item.iconActive : item.iconInactive }}</v-icon>
           <span class="text-capitalize d-none d-lg-inline">{{ item.label }}</span>
         </v-btn>
+
+        <!-- Account dropdown menu -->
+        <v-menu transition="fade-transition" location="bottom end">
+          <template #activator="{ props }">
+            <v-btn
+              v-bind="props"
+              variant="text"
+              :class="{ 'text-primary': activeTab === 'account' }"
+              size="small"
+            >
+              <v-icon class="me-1">{{ activeTab === 'account' ? 'mdi-account' : 'mdi-account-outline' }}</v-icon>
+              <span class="text-capitalize d-none d-lg-inline">Account</span>
+              <v-icon class="d-none d-lg-inline ms-1" size="18">mdi-menu-down</v-icon>
+            </v-btn>
+          </template>
+
+          <v-list density="comfortable">
+            <v-list-item :to="'/account'">
+              <v-list-item-title>Profile</v-list-item-title>
+            </v-list-item>
+            <v-list-item @click="handleLogout">
+              <v-list-item-title>Sign Out</v-list-item-title>
+            </v-list-item>
+          </v-list>
+        </v-menu>
       </div>
     </v-app-bar>
 
@@ -71,6 +97,10 @@ import { storeToRefs } from 'pinia'
 const route = useRoute()
 const authStore = useAuthStore()
 const { isAuthenticated } = storeToRefs(authStore)
+
+async function handleLogout () {
+  await authStore.logout()
+}
 
 const activeTab = ref('activity')
 
@@ -112,6 +142,9 @@ const navItems = [
     label: 'Account'
   }
 ]
+
+// Computed list excluding account for top bar
+const topNavItems = computed(() => navItems.filter(i => i.value !== 'account'))
 
 // Initialize auth state on app load
 onMounted(async () => {
