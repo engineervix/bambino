@@ -30,6 +30,6 @@
   ],
   "timezone": "Africa/Lusaka",
   "schedule": [
-    "0 17 * * 2,3"
+    "at 17:00 on Tuesday and Wednesday"
   ]
 }
