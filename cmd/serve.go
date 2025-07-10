@@ -65,6 +65,7 @@ func runServer(overridePort string) {
 
 	// Create Echo instance
 	e := echo.New()
+	e.IPExtractor = echo.ExtractIPFromRealIPHeader()
 
 	// Basic middleware
 	e.Use(middleware.Logger())
