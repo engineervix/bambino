@@ -15,107 +15,128 @@
     <v-row class="mb-4">
       <!-- Feeds today -->
       <v-col cols="12" sm="6" md="4" lg="3">
-        <v-card elevation="2" class="pa-5 text-center h-100">
-          <v-icon icon="mdi-baby-bottle" size="40" class="mb-3" color="accent1" />
-          <div class="text-subtitle-1 mb-2">Feeds today</div>
-          <div class="text-h5 font-weight-bold mb-2">
-            <span v-if="statsStore.loading">…</span>
-            <span v-else>{{ feedsToday }}</span>
-          </div>
-          <div class="text-caption text-medium-emphasis">
-            <span v-if="totalFeedAmountToday">{{ totalFeedAmountToday }} total</span>
-            <span v-else>{{ feedsToday === "1" ? "feed" : "feeds" }}</span>
+        <v-card elevation="2" class="pa-5 text-center h-100 position-relative overflow-hidden">
+          <!-- Background gradient -->
+          <div class="position-absolute w-100 h-100" style="top: 0; left: 0; background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(147, 51, 234, 0.1) 100%); border-radius: inherit;"></div>
+
+          <div class="position-relative">
+            <v-icon icon="mdi-baby-bottle" size="40" class="mb-3" color="accent1" />
+            <div class="text-subtitle-1 mb-2">Feeds today</div>
+            <div class="text-h5 font-weight-bold mb-2">
+              <span v-if="statsStore.loading">…</span>
+              <span v-else>{{ feedsToday }}</span>
+            </div>
+            <div class="text-caption text-medium-emphasis">
+              <span v-if="totalFeedAmountToday">{{ totalFeedAmountToday }} total</span>
+              <span v-else>{{ feedsToday === "1" ? "feed" : "feeds" }}</span>
+            </div>
           </div>
         </v-card>
       </v-col>
 
       <!-- Pumping today -->
       <v-col cols="12" sm="6" md="4" lg="3">
-        <v-card elevation="2" class="pa-5 text-center h-100">
-          <v-icon icon="mdi-pump" size="40" class="mb-3" color="accent1" />
-          <div class="text-subtitle-1 mb-2">Pumping today</div>
-          <div class="text-h5 font-weight-bold mb-2">
-            <span v-if="statsStore.loading">…</span>
-            <span v-else>{{ pumpingToday }}</span>
-          </div>
-          <div class="text-caption text-medium-emphasis">
-            <span v-if="totalPumpAmountToday">{{ totalPumpAmountToday }} total</span>
-            <span v-else>{{ pumpingToday === "1" ? "session" : "sessions" }}</span>
+        <v-card elevation="2" class="pa-5 text-center h-100 position-relative overflow-hidden">
+          <!-- Background gradient -->
+          <div class="position-absolute w-100 h-100" style="top: 0; left: 0; background: linear-gradient(135deg, rgba(34, 197, 94, 0.1) 0%, rgba(59, 130, 246, 0.1) 100%); border-radius: inherit;"></div>
+
+          <div class="position-relative">
+            <v-icon icon="mdi-pump" size="40" class="mb-3" color="accent1" />
+            <div class="text-subtitle-1 mb-2">Pumping today</div>
+            <div class="text-h5 font-weight-bold mb-2">
+              <span v-if="statsStore.loading">…</span>
+              <span v-else>{{ pumpingToday }}</span>
+            </div>
+            <div class="text-caption text-medium-emphasis">
+              <span v-if="totalPumpAmountToday">{{ totalPumpAmountToday }} total</span>
+              <span v-else>{{ pumpingToday === "1" ? "session" : "sessions" }}</span>
+            </div>
           </div>
         </v-card>
       </v-col>
 
       <!-- Diapers today -->
       <v-col cols="12" sm="6" md="4" lg="3">
-        <v-card elevation="2" class="pa-5 text-center h-100">
-          <v-icon icon="mdi-toilet" size="40" class="mb-3" color="accent2" />
-          <div class="text-subtitle-1 mb-2">Diapers today</div>
-          <div class="text-h5 font-weight-bold mb-2">
-            <span v-if="statsStore.loading">…</span>
-            <span v-else>{{ diapersToday }}</span>
-          </div>
-          <div class="text-caption text-medium-emphasis">
-            {{ diapersToday === "1" ? "diaper" : "diapers" }} changed
+        <v-card elevation="2" class="pa-5 text-center h-100 position-relative overflow-hidden">
+          <!-- Background gradient -->
+          <div class="position-absolute w-100 h-100" style="top: 0; left: 0; background: linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, rgba(236, 72, 153, 0.1) 100%); border-radius: inherit;"></div>
+
+          <div class="position-relative">
+            <v-icon icon="mdi-toilet" size="40" class="mb-3" color="accent2" />
+            <div class="text-subtitle-1 mb-2">Diapers today</div>
+            <div class="text-h5 font-weight-bold mb-2">
+              <span v-if="statsStore.loading">…</span>
+              <span v-else>{{ diapersToday }}</span>
+            </div>
+            <div class="text-caption text-medium-emphasis">
+              <span v-if="statsStore.loading">Loading...</span>
+              <span v-else-if="diaperBreakdown">
+                {{ diaperBreakdown.wet }} wet, {{ diaperBreakdown.dirty }} dirty
+              </span>
+              <span v-else>
+                {{ diapersToday === "1" ? "diaper" : "diapers" }} changed
+              </span>
+            </div>
           </div>
         </v-card>
       </v-col>
 
       <!-- Sleep today -->
       <v-col cols="12" sm="6" md="4" lg="3">
-        <v-card elevation="2" class="pa-5 text-center h-100">
-          <v-icon icon="mdi-sleep" size="40" class="mb-3" color="accent2" />
-          <div class="text-subtitle-1 mb-2">Sleep today</div>
-          <div class="text-h5 font-weight-bold mb-2">
-            <span v-if="statsStore.loading">…</span>
-            <span v-else>{{ sleepToday }}</span>
-          </div>
-          <div v-if="sleepSessionsToday > 0" class="text-caption text-medium-emphasis">
-            {{ sleepSessionsToday }} session{{ sleepSessionsToday > 1 ? 's' : '' }}
+        <v-card elevation="2" class="pa-5 text-center h-100 position-relative overflow-hidden">
+          <!-- Background gradient -->
+          <div class="position-absolute w-100 h-100" style="top: 0; left: 0; background: linear-gradient(135deg, rgba(168, 85, 247, 0.1) 0%, rgba(236, 72, 153, 0.1) 100%); border-radius: inherit;"></div>
+
+          <div class="position-relative">
+            <v-icon icon="mdi-sleep" size="40" class="mb-3" color="accent2" />
+            <div class="text-subtitle-1 mb-2">Sleep today</div>
+            <div class="text-h5 font-weight-bold mb-2">
+              <span v-if="statsStore.loading">…</span>
+              <span v-else>{{ sleepToday }}</span>
+            </div>
+            <div v-if="sleepSessionsToday > 0" class="text-caption text-medium-emphasis">
+              {{ sleepSessionsToday }} session{{ sleepSessionsToday > 1 ? 's' : '' }}
+            </div>
           </div>
         </v-card>
       </v-col>
 
       <!-- Currently sleeping -->
       <v-col cols="12" sm="6" md="4" lg="3">
-        <v-card elevation="2" class="pa-5 text-center h-100">
-          <v-icon icon="mdi-sleep" size="40" class="mb-3" color="accent1" />
-          <div class="text-subtitle-1 mb-2">{{ sleepingTitle }}</div>
-          <div class="text-h5 font-weight-bold mb-2">
-            <span v-if="statsStore.loading">…</span>
-            <span v-else>{{ sleepingDisplay }}</span>
-          </div>
-          <div v-if="lastSleepDurationDisplay" class="text-caption text-medium-emphasis">
-            {{ lastSleepDurationDisplay }}
+        <v-card elevation="2" class="pa-5 text-center h-100 position-relative overflow-hidden">
+          <!-- Background gradient -->
+          <div class="position-absolute w-100 h-100" style="top: 0; left: 0; background: linear-gradient(135deg, rgba(245, 158, 11, 0.1) 0%, rgba(168, 85, 247, 0.1) 100%); border-radius: inherit;"></div>
+
+          <div class="position-relative">
+            <v-icon icon="mdi-sleep" size="40" class="mb-3" color="accent1" />
+            <div class="text-subtitle-1 mb-2">{{ sleepingTitle }}</div>
+            <div class="text-h5 font-weight-bold mb-2">
+              <span v-if="statsStore.loading">…</span>
+              <span v-else>{{ sleepingDisplay }}</span>
+            </div>
+            <div v-if="lastSleepDurationDisplay" class="text-caption text-medium-emphasis">
+              {{ lastSleepDurationDisplay }}
+            </div>
           </div>
         </v-card>
       </v-col>
 
       <!-- Last Feed -->
       <v-col cols="12" sm="6" md="4" lg="3">
-        <v-card elevation="2" class="pa-5 text-center h-100">
-          <v-icon icon="mdi-baby-bottle" size="40" class="mb-3" color="accent1" />
-          <div class="text-subtitle-1 mb-2">Last fed</div>
-          <div class="text-h5 font-weight-bold mb-2">
-            <span v-if="statsStore.loading">…</span>
-            <span v-else>{{ lastFedDisplay }}</span>
-          </div>
-          <div v-if="lastFeedAmount" class="text-caption text-medium-emphasis">
-            {{ lastFeedAmount }}
-          </div>
-        </v-card>
-      </v-col>
+        <v-card elevation="2" class="pa-5 text-center h-100 position-relative overflow-hidden">
+          <!-- Background gradient -->
+          <div class="position-absolute w-100 h-100" style="top: 0; left: 0; background: linear-gradient(135deg, rgba(34, 197, 94, 0.1) 0%, rgba(245, 158, 11, 0.1) 100%); border-radius: inherit;"></div>
 
-      <!-- Weekly activities -->
-      <v-col cols="12" sm="6" md="4" lg="3">
-        <v-card elevation="2" class="pa-5 text-center h-100">
-          <v-icon icon="mdi-calendar-week" size="40" class="mb-3" color="accent2" />
-          <div class="text-subtitle-1 mb-2">Activities this week</div>
-          <div class="text-h5 font-weight-bold mb-2">
-            <span v-if="statsStore.loading">…</span>
-            <span v-else>{{ activitiesWeek }}</span>
-          </div>
-          <div class="text-caption text-medium-emphasis">
-            total activities
+          <div class="position-relative">
+            <v-icon icon="mdi-baby-bottle" size="40" class="mb-3" color="accent1" />
+            <div class="text-subtitle-1 mb-2">Last fed</div>
+            <div class="text-h5 font-weight-bold mb-2">
+              <span v-if="statsStore.loading">…</span>
+              <span v-else>{{ lastFedDisplay }}</span>
+            </div>
+            <div v-if="lastFeedAmount" class="text-caption text-medium-emphasis">
+              {{ lastFeedAmount }}
+            </div>
           </div>
         </v-card>
       </v-col>
@@ -128,39 +149,100 @@
       </v-col>
     </v-row>
     <v-row class="mb-4">
-      <!-- Avg Counts -->
-      <v-col cols="12" md="6">
-        <v-card elevation="2" class="h-100">
-          <v-card-title class="text-h6 pb-3">Average Daily Counts</v-card-title>
-          <v-card-text>
-            <div v-if="statsStore.loading" class="text-center py-10">
-              <v-progress-circular indeterminate color="primary" />
+      <!-- Weekly activities -->
+      <v-col cols="12" md="4">
+        <v-card elevation="2" class="pa-6 text-center h-100 position-relative overflow-hidden">
+          <!-- Background gradient -->
+          <div class="position-absolute w-100 h-100" style="top: 0; left: 0; background: linear-gradient(135deg, rgba(236, 72, 153, 0.1) 0%, rgba(99, 102, 241, 0.1) 100%); border-radius: inherit;"></div>
+
+          <!-- Background decorative icon -->
+          <div class="position-absolute" style="top: -10px; right: -10px; opacity: 0.08; transform: rotate(15deg);">
+            <v-icon icon="mdi-chart-line" size="120" color="accent2" />
+          </div>
+
+          <div class="position-relative">
+            <v-icon icon="mdi-calendar-week" size="48" class="mb-4" color="accent2" />
+            <div class="text-h6 mb-3 font-weight-medium">Activities this week</div>
+            <div class="text-h3 font-weight-bold mb-3" style="color: #ec4899;">
+              <span v-if="statsStore.loading">…</span>
+              <span v-else>{{ activitiesWeek }}</span>
             </div>
-            <div v-else-if="statsStore.error" class="text-center text-error py-10">
-              {{ statsStore.error }}
+            <div class="text-body-2 text-medium-emphasis mb-2">
+              total activities
             </div>
-            <div v-else style="height: 250px">
-              <BarChart :chart-data="avgCountsChartData" :chart-options="chartOptions" />
+            <div class="text-caption text-medium-emphasis">
+              <v-icon icon="mdi-trending-up" size="16" class="mr-1" />
+              {{ Math.round((activitiesWeek / 7) * 10) / 10 }} per day average
             </div>
-          </v-card-text>
+          </div>
         </v-card>
       </v-col>
 
       <!-- Avg Sleep -->
-      <v-col cols="12" md="6">
-        <v-card elevation="2" class="h-100">
-          <v-card-title class="text-h6 pb-3">Average Daily Sleep</v-card-title>
-          <v-card-text class="d-flex align-center justify-center">
-            <div v-if="statsStore.loading" class="text-center">
-              <v-progress-circular indeterminate color="primary" />
+      <v-col cols="12" md="4">
+        <v-card elevation="2" class="pa-6 text-center h-100 position-relative overflow-hidden">
+          <!-- Background gradient -->
+          <div class="position-absolute w-100 h-100" style="top: 0; left: 0; background: linear-gradient(135deg, rgba(245, 158, 11, 0.1) 0%, rgba(168, 85, 247, 0.1) 100%); border-radius: inherit;"></div>
+
+          <!-- Background decorative icon -->
+          <div class="position-absolute" style="top: -15px; right: -15px; opacity: 0.08; transform: rotate(-15deg);">
+            <v-icon icon="mdi-sleep" size="140" color="amber" />
+          </div>
+
+          <div class="position-relative">
+            <v-icon icon="mdi-sleep" size="48" class="mb-4" color="amber" />
+            <div class="text-h6 mb-3 font-weight-medium">Average Daily Sleep</div>
+            <div v-if="statsStore.loading" class="text-center py-4">
+              <v-progress-circular indeterminate color="amber" size="40" />
             </div>
-            <div v-else-if="statsStore.error" class="text-center text-error">
-              {{ statsStore.error }}
+            <div v-else-if="statsStore.error" class="text-center text-error py-4">
+              <v-icon icon="mdi-alert-circle" class="mb-2" />
+              <div>{{ statsStore.error }}</div>
             </div>
-            <div v-else class="text-h3 font-weight-bold text-center" style="color: #f59e0b">
-              {{ avgSleep }}
+            <div v-else>
+              <div class="text-h2 font-weight-bold mb-3" style="color: #f59e0b">
+                {{ avgSleep }}
+              </div>
+              <div class="text-body-2 text-medium-emphasis mb-2">
+                per night
+              </div>
+              <div class="text-caption text-medium-emphasis">
+                <v-icon icon="mdi-moon-waning-crescent" size="16" class="mr-1" />
+                Based on this week's data
+              </div>
             </div>
-          </v-card-text>
+          </div>
+        </v-card>
+      </v-col>
+
+      <!-- Avg Counts -->
+      <v-col cols="12" md="4">
+        <v-card elevation="2" class="pa-6 h-100 position-relative overflow-hidden">
+          <!-- Background gradient -->
+          <div class="position-absolute w-100 h-100" style="top: 0; left: 0; background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(34, 197, 94, 0.1) 100%); border-radius: inherit;"></div>
+
+          <!-- Background decorative icon -->
+          <div class="position-absolute" style="top: -10px; left: -10px; opacity: 0.08; transform: rotate(-10deg);">
+            <v-icon icon="mdi-chart-bar" size="130" color="primary" />
+          </div>
+
+          <div class="position-relative">
+            <div class="text-center mb-4">
+              <v-icon icon="mdi-chart-bar" size="48" color="primary" />
+            </div>
+            <div class="text-h6 mb-4 font-weight-medium text-center">Average Daily Counts</div>
+
+            <div v-if="statsStore.loading" class="text-center py-10">
+              <v-progress-circular indeterminate color="primary" size="40" />
+            </div>
+            <div v-else-if="statsStore.error" class="text-center text-error py-10">
+              <v-icon icon="mdi-alert-circle" class="mb-2" />
+              <div>{{ statsStore.error }}</div>
+            </div>
+            <div v-else style="height: 200px">
+              <BarChart :chart-data="avgCountsChartData" :chart-options="chartOptions" />
+            </div>
+          </div>
         </v-card>
       </v-col>
     </v-row>
@@ -168,19 +250,24 @@
     <!-- Weekly Sleep Trend Chart -->
     <v-row class="mb-4">
       <v-col cols="12">
-        <v-card elevation="2">
-          <v-card-title class="text-h6 pb-3">Weekly Sleep Trend</v-card-title>
-          <v-card-text>
-            <div v-if="statsStore.loading" class="text-center py-10">
-              <v-progress-circular indeterminate color="primary" />
-            </div>
-            <div v-else-if="statsStore.error" class="text-center text-error py-10">
-              {{ statsStore.error }}
-            </div>
-            <div v-else style="height: 300px">
-              <LineChart :chart-data="weeklySleepTrendData" :chart-options="chartOptions" />
-            </div>
-          </v-card-text>
+        <v-card elevation="2" class="position-relative overflow-hidden">
+          <!-- Background gradient -->
+          <div class="position-absolute w-100 h-100" style="top: 0; left: 0; background: linear-gradient(135deg, rgba(245, 158, 11, 0.05) 0%, rgba(236, 72, 153, 0.05) 100%); border-radius: inherit;"></div>
+
+          <div class="position-relative">
+            <v-card-title class="text-h6 pb-3">Weekly Sleep Trend</v-card-title>
+            <v-card-text>
+              <div v-if="statsStore.loading" class="text-center py-10">
+                <v-progress-circular indeterminate color="primary" />
+              </div>
+              <div v-else-if="statsStore.error" class="text-center text-error py-10">
+                {{ statsStore.error }}
+              </div>
+              <div v-else style="height: 300px">
+                <LineChart :chart-data="weeklySleepTrendData" :chart-options="chartOptions" />
+              </div>
+            </v-card-text>
+          </div>
         </v-card>
       </v-col>
     </v-row>
@@ -291,6 +378,10 @@ const lastFeedAmount = computed(() => {
 
 const diapersToday = computed(() => {
   return statsStore.daily?.counts?.diaper ?? "0";
+});
+
+const diaperBreakdown = computed(() => {
+  return statsStore.daily?.diaper_breakdown || null;
 });
 
 const feedsToday = computed(() => {

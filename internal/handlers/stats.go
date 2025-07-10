@@ -12,10 +12,17 @@ import (
 
 // DailyStatsResponse represents the daily summary
 type DailyStatsResponse struct {
-	Date           string                `json:"date"`
-	Counts         map[string]int        `json:"counts"`
-	Totals         map[string]float64    `json:"totals"`
-	LastActivities map[string]*time.Time `json:"last_activities"`
+	Date            string                `json:"date"`
+	Counts          map[string]int        `json:"counts"`
+	Totals          map[string]float64    `json:"totals"`
+	LastActivities  map[string]*time.Time `json:"last_activities"`
+	DiaperBreakdown *DiaperBreakdown      `json:"diaper_breakdown,omitempty"`
+}
+
+// DiaperBreakdown represents wet and dirty diaper counts
+type DiaperBreakdown struct {
+	Wet   int `json:"wet"`
+	Dirty int `json:"dirty"`
 }
 
 // RecentStatsResponse represents recent activity times
@@ -113,6 +120,11 @@ func GetDailyStats(c echo.Context) error {
 	totals := make(map[string]float64)
 	lastActivities := make(map[string]*time.Time)
 
+	// Track diaper breakdown
+	var diaperBreakdown *DiaperBreakdown
+	wetCount := 0
+	dirtyCount := 0
+
 	for _, activity := range activities {
 		activityType := string(activity.Type)
 		counts[activityType]++
@@ -132,6 +144,15 @@ func GetDailyStats(c echo.Context) error {
 			if activity.PumpActivity != nil && activity.PumpActivity.AmountML != nil {
 				totals["pump_amount_ml"] += *activity.PumpActivity.AmountML
 			}
+		case models.ActivityTypeDiaper:
+			if activity.DiaperActivity != nil {
+				if activity.DiaperActivity.Wet {
+					wetCount++
+				}
+				if activity.DiaperActivity.Dirty {
+					dirtyCount++
+				}
+			}
 		case models.ActivityTypeSleep:
 			if activity.EndTime != nil {
 				duration := activity.EndTime.Sub(activity.StartTime).Hours()
@@ -140,11 +161,20 @@ func GetDailyStats(c echo.Context) error {
 		}
 	}
 
+	// Set diaper breakdown if there are any diapers
+	if counts["diaper"] > 0 {
+		diaperBreakdown = &DiaperBreakdown{
+			Wet:   wetCount,
+			Dirty: dirtyCount,
+		}
+	}
+
 	response := DailyStatsResponse{
-		Date:           targetDate.Format("2006-01-02"),
-		Counts:         counts,
-		Totals:         totals,
-		LastActivities: lastActivities,
+		Date:            targetDate.Format("2006-01-02"),
+		Counts:          counts,
+		Totals:          totals,
+		LastActivities:  lastActivities,
+		DiaperBreakdown: diaperBreakdown,
 	}
 
 	return c.JSON(http.StatusOK, response)
