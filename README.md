@@ -41,7 +41,7 @@ A self-hosted baby activity tracking app for personal use. Tracks feeding, sleep
 
 - **Backend**: Go with [Echo](https://echo.labstack.com/) framework
 - **Frontend**: [Vue 3](https://vuejs.org/) + [Vuetify](https://vuetifyjs.com/)
-- **Database**: SQLite (default) or PostgreSQL
+- **Database**: SQLite or PostgreSQL
 - **Auth**: Session-based
 
 ## Running the application
