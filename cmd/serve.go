@@ -147,17 +147,6 @@ func runServer(overridePort string) {
 	api.GET("/stats/recent", handlers.GetRecentStats)
 	api.GET("/stats/weekly", handlers.GetWeeklyStats)
 
-	// Example protected route (for testing)
-	api.GET("/test", func(c echo.Context) error {
-		userID := c.Get("user_id")
-		username := c.Get("username")
-		return c.JSON(200, map[string]interface{}{
-			"message":  "This is a protected route",
-			"user_id":  userID,
-			"username": username,
-		})
-	})
-
 	// Serve static files in production
 	if cfg.Env == "production" {
 		web, err := fs.Sub(assets.Assets, "dist")
