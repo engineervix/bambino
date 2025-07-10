@@ -65,7 +65,14 @@ func runServer(overridePort string) {
 
 	// Create Echo instance
 	e := echo.New()
-	e.IPExtractor = echo.ExtractIPFromRealIPHeader()
+
+	// Configure IP extraction for Traefik proxy
+	// Traefik uses X-Forwarded-For header and runs in Docker network
+	e.IPExtractor = echo.ExtractIPFromXFFHeader(
+		echo.TrustLoopback(true),   // Trust loopback addresses
+		echo.TrustLinkLocal(true),  // Trust link-local addresses
+		echo.TrustPrivateNet(true), // Trust private network addresses (Docker networks)
+	)
 
 	// Basic middleware
 	e.Use(middleware.Logger())
