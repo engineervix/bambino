@@ -2,6 +2,12 @@
 
 A self-hosted baby activity tracking app for personal use. Tracks feeding, sleeping, diapers, and other baby activities with complete data ownership.
 
+![GitHub go.mod Go version](https://img.shields.io/github/go-mod/go-version/engineervix/bambino)
+[![CI/CD](https://github.com/engineervix/bambino/actions/workflows/main.yml/badge.svg)](https://github.com/engineervix/bambino/actions/workflows/main.yml)
+
+[![Node v22](https://img.shields.io/badge/Node-v22-teal.svg)](https://nodejs.org/en/blog/release/v22.0.0)
+[![code style: prettier](https://img.shields.io/badge/code%20style-prettier-ff69b4.svg)](https://prettier.io/)
+
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
 **Table of Contents**  *generated with [DocToc](https://github.com/thlorenz/doctoc)*
