@@ -7,38 +7,43 @@ import (
 )
 
 type Config struct {
-	Port           string
-	Env            string
-	DBType         string
-	DBPath         string
-	DBHost         string
-	DBPort         string
-	DBName         string
-	DBUser         string
-	DBPassword     string
-	DBSSLMode      string
-	SessionSecret  string
-	SessionMaxAge  int
-	AllowedOrigins string
+	Port                   string
+	Env                    string
+	DBType                 string
+	DBPath                 string
+	DBHost                 string
+	DBPort                 string
+	DBName                 string
+	DBUser                 string
+	DBPassword             string
+	DBSSLMode              string
+	SessionSecret          string
+	SessionMaxAge          int
+	AllowedOrigins         string
+	SentryDSN              string
+	SentryTracesSampleRate float64
 }
 
 func Load() *Config {
 	maxAge, _ := strconv.Atoi(getEnv("SESSION_MAX_AGE", "86400"))
+	tracesSampleRate, _ := strconv.ParseFloat(getEnv("SENTRY_TRACES_SAMPLE_RATE", "0.1"), 64)
 
 	return &Config{
-		Port:           getEnv("PORT", "8080"),
-		Env:            getEnv("ENV", "development"),
-		DBType:         getEnv("DB_TYPE", "sqlite"),
-		DBPath:         getEnv("DB_PATH", "./bambino.db"),
-		DBHost:         getEnv("DB_HOST", "localhost"),
-		DBPort:         getEnv("DB_PORT", "5432"),
-		DBName:         getEnv("DB_NAME", "baby"),
-		DBUser:         getEnv("DB_USER", "postgres"),
-		DBPassword:     getEnv("DB_PASSWORD", ""),
-		DBSSLMode:      getEnv("DB_SSLMODE", "disable"),
-		SessionSecret:  getEnv("SESSION_SECRET", "change-me"),
-		SessionMaxAge:  maxAge,
-		AllowedOrigins: getEnv("ALLOWED_ORIGINS", "http://localhost:5173"),
+		Port:                   getEnv("PORT", "8080"),
+		Env:                    getEnv("ENV", "development"),
+		DBType:                 getEnv("DB_TYPE", "sqlite"),
+		DBPath:                 getEnv("DB_PATH", "./bambino.db"),
+		DBHost:                 getEnv("DB_HOST", "localhost"),
+		DBPort:                 getEnv("DB_PORT", "5432"),
+		DBName:                 getEnv("DB_NAME", "baby"),
+		DBUser:                 getEnv("DB_USER", "postgres"),
+		DBPassword:             getEnv("DB_PASSWORD", ""),
+		DBSSLMode:              getEnv("DB_SSLMODE", "disable"),
+		SessionSecret:          getEnv("SESSION_SECRET", "change-me"),
+		SessionMaxAge:          maxAge,
+		AllowedOrigins:         getEnv("ALLOWED_ORIGINS", "http://localhost:5173"),
+		SentryDSN:              getEnv("SENTRY_DSN", ""),
+		SentryTracesSampleRate: tracesSampleRate,
 	}
 }
 

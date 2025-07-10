@@ -5,8 +5,11 @@ import (
 	"log"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/engineervix/bambino/internal/assets"
+	"github.com/getsentry/sentry-go"
+	sentryecho "github.com/getsentry/sentry-go/echo"
 	"github.com/joho/godotenv"
 	"github.com/labstack/echo-contrib/session"
 	"github.com/labstack/echo/v4"
@@ -52,6 +55,35 @@ func runServer(overridePort string) {
 		log.Fatalf("Configuration error: %v", err)
 	}
 
+	// Initialize Sentry
+	if cfg.SentryDSN != "" {
+		err := sentry.Init(sentry.ClientOptions{
+			Dsn:              cfg.SentryDSN,
+			Environment:      cfg.Env,
+			TracesSampleRate: cfg.SentryTracesSampleRate,
+			SendDefaultPII:   true, // Adds request headers and IP for users
+			BeforeSend: func(event *sentry.Event, hint *sentry.EventHint) *sentry.Event {
+				// Filter out sensitive information in development
+				if cfg.Env == "development" {
+					if hint.Context != nil {
+						if req, ok := hint.Context.Value(sentry.RequestContextKey).(*http.Request); ok {
+							// You can modify the event here based on the request
+							_ = req // Use the request if needed
+						}
+					}
+				}
+				return event
+			},
+		})
+		if err != nil {
+			log.Printf("Sentry initialization failed: %v", err)
+		} else {
+			log.Printf("Sentry initialized successfully")
+			// Flush buffered events on exit
+			defer sentry.Flush(2 * time.Second)
+		}
+	}
+
 	// Initialize database
 	db, err := database.Connect(cfg)
 	if err != nil {
@@ -77,6 +109,15 @@ func runServer(overridePort string) {
 	// Basic middleware
 	e.Use(middleware.Logger())
 	e.Use(middleware.Recover())
+
+	// Add Sentry middleware if configured
+	if cfg.SentryDSN != "" {
+		e.Use(sentryecho.New(sentryecho.Options{
+			Repanic:         true,
+			WaitForDelivery: false,
+			Timeout:         3 * time.Second,
+		}))
+	}
 
 	// Configure CORS
 	corsConfig := middleware.CORSConfig{

@@ -12,6 +12,7 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/engineervix/bambino/internal/models"
+	"github.com/engineervix/bambino/internal/utils"
 )
 
 // Activity-specific data structures
@@ -141,6 +142,7 @@ func GetActivities(c echo.Context) error {
 	// Get user's baby
 	baby, err := getUserBaby(db, userID)
 	if err != nil {
+		utils.CaptureError(c, err, "failed to get user's baby")
 		return echo.NewHTTPError(http.StatusInternalServerError, "failed to get baby")
 	}
 
