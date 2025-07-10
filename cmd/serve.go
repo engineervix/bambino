@@ -1,9 +1,11 @@
 package cmd
 
 import (
+	"encoding/json"
 	"io/fs"
 	"log"
 	"net/http"
+	"os"
 	"strings"
 	"time"
 
@@ -121,8 +123,65 @@ func runServer(overridePort string) {
 		return extractor(req)
 	}
 
-	// Basic middleware
-	e.Use(middleware.Logger())
+	// Configure structured logging with proper log levels using RequestLogger
+	e.Use(middleware.RequestLoggerWithConfig(middleware.RequestLoggerConfig{
+		LogStatus:       true,
+		LogURI:          true,
+		LogMethod:       true,
+		LogRemoteIP:     true,
+		LogHost:         true,
+		LogUserAgent:    true,
+		LogLatency:      true,
+		LogError:        true,
+		LogRequestID:    true,
+		LogResponseSize: true,
+		LogValuesFunc: func(c echo.Context, v middleware.RequestLoggerValues) error {
+			// Determine log level based on status code
+			var level string
+			switch {
+			case v.Status >= 500:
+				level = "error"
+			case v.Status >= 400:
+				level = "warn"
+			default:
+				level = "info"
+			}
+
+			// Create structured log entry
+			logEntry := map[string]interface{}{
+				"time":          time.Now().Format(time.RFC3339Nano),
+				"level":         level,
+				"id":            v.RequestID,
+				"remote_ip":     v.RemoteIP,
+				"host":          v.Host,
+				"method":        v.Method,
+				"uri":           v.URI,
+				"user_agent":    v.UserAgent,
+				"status":        v.Status,
+				"latency":       v.Latency.Nanoseconds(),
+				"latency_human": v.Latency.String(),
+				"bytes_out":     v.ResponseSize,
+			}
+
+			// Add error field if there was an error
+			if v.Error != nil {
+				logEntry["error"] = v.Error.Error()
+			} else {
+				logEntry["error"] = ""
+			}
+
+			// Marshal to JSON and print
+			jsonBytes, err := json.Marshal(logEntry)
+			if err != nil {
+				log.Printf("Error marshaling log entry: %v", err)
+				return nil
+			}
+
+			os.Stdout.Write(jsonBytes)
+			os.Stdout.Write([]byte("\n"))
+			return nil
+		},
+	}))
 	e.Use(middleware.Recover())
 
 	// Add Sentry middleware if configured
