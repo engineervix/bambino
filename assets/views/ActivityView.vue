@@ -40,65 +40,6 @@
             @add="handleQuickAdd(activity)"
           />
         </v-col>
-
-        <!-- Expandable sections -->
-        <v-col cols="12" class="py-2">
-          <v-expansion-panels variant="accordion">
-            <!-- Growth section -->
-            <v-expansion-panel>
-              <v-expansion-panel-title color="growth-bg">
-                <v-icon :color="'growth'" class="mr-3">mdi-human-male-height</v-icon>
-                <span class="text-h6">Growth</span>
-              </v-expansion-panel-title>
-              <v-expansion-panel-text>
-                <v-list>
-                  <v-list-item @click="handleQuickAdd({ id: 'growth' })">
-                    <template v-slot:prepend>
-                      <v-icon :color="'growth'">mdi-human-male-height</v-icon>
-                    </template>
-                    <v-list-item-title>Record Measurements</v-list-item-title>
-                    <v-list-item-subtitle>Weight, height, head circumference</v-list-item-subtitle>
-                  </v-list-item>
-                </v-list>
-              </v-expansion-panel-text>
-            </v-expansion-panel>
-
-            <!-- Health section -->
-            <v-expansion-panel>
-              <v-expansion-panel-title color="health-bg">
-                <v-icon :color="'health'" class="mr-3">mdi-medical-bag</v-icon>
-                <span class="text-h6">Health</span>
-              </v-expansion-panel-title>
-              <v-expansion-panel-text>
-                <v-list>
-                  <v-list-item @click="handleQuickAdd({ id: 'health', subType: 'checkup' })">
-                    <template v-slot:prepend>
-                      <v-icon :color="'health'">mdi-stethoscope</v-icon>
-                    </template>
-                    <v-list-item-title>Medical Checkup</v-list-item-title>
-                    <v-list-item-subtitle>Doctor visit, routine checkup</v-list-item-subtitle>
-                  </v-list-item>
-
-                  <v-list-item @click="handleQuickAdd({ id: 'health', subType: 'vaccine' })">
-                    <template v-slot:prepend>
-                      <v-icon :color="'health'">mdi-needle</v-icon>
-                    </template>
-                    <v-list-item-title>Vaccination</v-list-item-title>
-                    <v-list-item-subtitle>Record vaccines received</v-list-item-subtitle>
-                  </v-list-item>
-
-                  <v-list-item @click="handleQuickAdd({ id: 'health', subType: 'illness' })">
-                    <template v-slot:prepend>
-                      <v-icon :color="'health'">mdi-thermometer</v-icon>
-                    </template>
-                    <v-list-item-title>Illness</v-list-item-title>
-                    <v-list-item-subtitle>Symptoms, treatment</v-list-item-subtitle>
-                  </v-list-item>
-                </v-list>
-              </v-expansion-panel-text>
-            </v-expansion-panel>
-          </v-expansion-panels>
-        </v-col>
       </v-row>
     </v-container>
 
@@ -209,50 +150,9 @@ const currentFormComponent = computed(() => {
   return formComponents[currentActivity.value.id] || null;
 });
 
-// Main activities (cards) - This was the issue!
+// Main activities (cards)
 const mainActivities = computed(() => {
-  return [
-    {
-      id: "feed",
-      title: "Feed",
-      description: "Track a feeding session",
-      icon: "mdi-baby-bottle",
-      color: "feed",
-      hasTimer: true,
-    },
-    {
-      id: "pump",
-      title: "Pump",
-      description: "Track a pumping session",
-      icon: "mdi-mother-nurse",
-      color: "pump",
-      hasTimer: true,
-    },
-    {
-      id: "diaper",
-      title: "Diaper",
-      description: "Track a diaper change",
-      icon: "mdi-baby",
-      color: "diaper",
-      hasTimer: false,
-    },
-    {
-      id: "sleep",
-      title: "Sleep",
-      description: "Track a sleep session",
-      icon: "mdi-sleep",
-      color: "sleep",
-      hasTimer: true,
-    },
-    {
-      id: "milestone",
-      title: "Baby Firsts",
-      description: "Track memorable moments",
-      icon: "mdi-party-popper",
-      color: "milestone",
-      hasTimer: false,
-    },
-  ];
+  return activityStore.activityTypes;
 });
 
 // Handlers

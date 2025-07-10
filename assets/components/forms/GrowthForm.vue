@@ -1,10 +1,10 @@
 <template>
   <v-form ref="form" @submit.prevent="handleSubmit">
-    <!-- Date input -->
+    <!-- Date and Time input -->
     <v-text-field
-      v-model="formData.date"
-      label="Date"
-      type="date"
+      v-model="formData.dateTime"
+      label="Date and Time"
+      type="datetime-local"
       variant="outlined"
       density="compact"
       :rules="[rules.required]"
@@ -100,7 +100,7 @@
 import { ref, computed, watch } from "vue";
 import { useActivityStore } from "@/stores/activity";
 import { useErrorHandling } from "@/composables/useErrorHandling";
-import { getCurrentDate, getDateString } from "@/utils/datetime";
+import { getCurrentDateTimeLocal, formatDateTimeLocal } from "@/utils/datetime";
 import { validationRules } from "@/utils/validation";
 
 const props = defineProps({
@@ -130,9 +130,8 @@ const showMeasurementError = ref(false);
 const initializeFormData = () => {
   if (props.editMode && props.activity) {
     const activity = props.activity;
-    const startTime = new Date(activity.start_time);
     return {
-      date: getDateString(startTime),
+      dateTime: formatDateTimeLocal(new Date(activity.start_time)),
       weight_kg: activity.growth_data?.weight_kg || null,
       height_cm: activity.growth_data?.height_cm || null,
       head_circumference_cm: activity.growth_data?.head_circumference_cm || null,
@@ -140,7 +139,7 @@ const initializeFormData = () => {
     };
   }
   return {
-    date: getCurrentDate(),
+    dateTime: getCurrentDateTimeLocal(),
     weight_kg: null,
     height_cm: null,
     head_circumference_cm: null,
@@ -213,9 +212,8 @@ async function handleSubmit() {
   }
 
   const result = await withErrorHandling(async () => {
-    // Growth measurements typically happen at a consistent time (like doctor visits)
-    // so we'll set it to noon on the selected date
-    const activityDateTime = new Date(`${formData.value.date}T12:00:00`);
+    // Use the full date and time from the form
+    const activityDateTime = new Date(formData.value.dateTime);
 
     const activityData = {
       type: "growth",

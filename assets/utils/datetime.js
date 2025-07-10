@@ -98,3 +98,25 @@ export function formatTimeAgo(date) {
     return `${days}d ago`;
   }
 }
+
+/**
+ * Gets current date and time in a format suitable for datetime-local input.
+ * YYYY-MM-DDTHH:mm
+ * @returns {string}
+ */
+export function getCurrentDateTimeLocal() {
+  const now = new Date();
+  now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+  return now.toISOString().slice(0, 16);
+}
+
+/**
+ * Formats a Date object into a string for datetime-local input.
+ * @param {Date} date
+ * @returns {string}
+ */
+export function formatDateTimeLocal(date) {
+  const d = new Date(date);
+  d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+  return d.toISOString().slice(0, 16);
+}
