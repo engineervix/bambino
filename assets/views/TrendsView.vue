@@ -127,11 +127,9 @@ import LineChart from "@/components/charts/LineChart.vue";
 
 const statsStore = useStatsStore();
 
-// Fetch stats on mount (if not already loaded)
+// Fetch stats on mount
 onMounted(() => {
-  if (!statsStore.lastUpdated) {
-    statsStore.fetchStats();
-  }
+  statsStore.fetchStats();
 });
 
 // --- Chart Data -------------------------------------------------------
