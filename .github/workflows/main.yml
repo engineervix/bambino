@@ -12,7 +12,7 @@ on:
 
 jobs:
   frontend:
-    name: Frontend checks
+    name: 🎨 Frontend checks
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -44,7 +44,7 @@ jobs:
 
   test:
     needs: [frontend]
-    name: Test on ${{ matrix.os }}
+    name: 🧪 Test on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -67,9 +67,6 @@ jobs:
           go-version-file: "go.mod"
           cache: true
 
-      - name: Install dependencies
-        run: go mod download
-
       - name: Test
         run: go test -v ./...
 
@@ -78,7 +75,7 @@ jobs:
 
   build:
     needs: [test, frontend]
-    name: Build for ${{ matrix.goos }}-${{ matrix.goarch }}
+    name: 🏗️ Build for ${{ matrix.goos }}-${{ matrix.goarch }}
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -87,10 +84,6 @@ jobs:
           - os: ubuntu-latest
             goos: linux
             goarch: amd64
-            cgo_enabled: 1
-          - os: ubuntu-latest-arm64
-            goos: linux
-            goarch: arm64
             cgo_enabled: 1
           - os: macos-latest # Apple Silicon runner for arm64
             goos: darwin
@@ -116,9 +109,6 @@ jobs:
           go-version-file: "go.mod"
           cache: true
 
-      - name: Install dependencies
-        run: go mod download
-
       - name: Build
         env:
           GOOS: ${{ matrix.goos }}
@@ -141,6 +131,7 @@ jobs:
           if-no-files-found: error
 
   release:
+    name: 🚀 Release
     if: startsWith( github.ref, 'refs/tags/v')
     needs: build
     permissions:
