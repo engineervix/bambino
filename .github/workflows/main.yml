@@ -43,6 +43,7 @@ jobs:
           if-no-files-found: error
 
   test:
+    needs: [frontend]
     name: Test on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     strategy:
@@ -54,10 +55,17 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Download frontend build
+        uses: actions/download-artifact@v4
+        with:
+          name: frontend-build
+          path: internal/assets/dist
+
       - name: Set up Go ${{ matrix.go-version }}
         uses: actions/setup-go@v5
         with:
           go-version-file: "go.mod"
+          cache: true
 
       - name: Test
         run: go test -v ./...
@@ -103,6 +111,7 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version-file: "go.mod"
+          cache: true
 
       - name: Build
         env:
