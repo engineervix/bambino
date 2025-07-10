@@ -98,13 +98,28 @@ func runServer(overridePort string) {
 	// Create Echo instance
 	e := echo.New()
 
-	// Configure IP extraction for Traefik proxy
-	// Traefik uses X-Forwarded-For header and runs in Docker network
-	e.IPExtractor = echo.ExtractIPFromXFFHeader(
-		echo.TrustLoopback(true),   // Trust loopback addresses
-		echo.TrustLinkLocal(true),  // Trust link-local addresses
-		echo.TrustPrivateNet(true), // Trust private network addresses (Docker networks)
-	)
+	// Configure IP extraction for Cloudflare + Traefik setup
+	// Cloudflare sends real IP in CF-Connecting-IP, fallback to X-Forwarded-For
+	e.IPExtractor = func(req *http.Request) string {
+		// First check CF-Connecting-IP (Cloudflare's real IP header)
+		if cfIP := req.Header.Get("CF-Connecting-IP"); cfIP != "" {
+			return cfIP
+		}
+
+		// Also check X-Real-IP as another common header
+		if realIP := req.Header.Get("X-Real-IP"); realIP != "" {
+			return realIP
+		}
+
+		// Fallback to X-Forwarded-For, trusting all private networks and Cloudflare
+		// Since Traefik is configured to trust Cloudflare IPs, we can trust private networks
+		extractor := echo.ExtractIPFromXFFHeader(
+			echo.TrustLoopback(true),   // Trust loopback addresses
+			echo.TrustLinkLocal(true),  // Trust link-local addresses
+			echo.TrustPrivateNet(true), // Trust private network addresses (includes Docker networks)
+		)
+		return extractor(req)
+	}
 
 	// Basic middleware
 	e.Use(middleware.Logger())
