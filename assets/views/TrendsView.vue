@@ -4,40 +4,83 @@
       <v-col cols="12">
         <h1 class="text-h4 mb-4">Trends &amp; Statistics</h1>
       </v-col>
+    </v-row>
 
-      <!-- Last Feed -->
-      <v-col cols="12" sm="6" md="3">
-        <v-card elevation="1" class="pa-4 text-center">
-          <v-icon icon="mdi-baby-bottle" size="36" class="mb-2" color="accent1" />
-          <div class="text-subtitle-1">Last fed</div>
-          <div class="text-h5 font-weight-bold">
+    <!-- Daily Totals -->
+    <v-row>
+      <v-col cols="12">
+        <h2 class="text-h5 mb-4">Today's Summary</h2>
+      </v-col>
+    </v-row>
+    <v-row class="mb-4">
+      <!-- Feeds today -->
+      <v-col cols="12" sm="6" md="4" lg="3">
+        <v-card elevation="2" class="pa-5 text-center h-100">
+          <v-icon icon="mdi-baby-bottle" size="40" class="mb-3" color="accent1" />
+          <div class="text-subtitle-1 mb-2">Feeds today</div>
+          <div class="text-h5 font-weight-bold mb-2">
             <span v-if="statsStore.loading">…</span>
-            <span v-else>{{ lastFedDisplay }}</span>
+            <span v-else>{{ feedsToday }}</span>
           </div>
-          <div v-if="lastFeedAmount" class="text-caption text-medium-emphasis">
-            {{ lastFeedAmount }}
+          <div class="text-caption text-medium-emphasis">
+            <span v-if="totalFeedAmountToday">{{ totalFeedAmountToday }} total</span>
+            <span v-else>{{ feedsToday === "1" ? "feed" : "feeds" }}</span>
+          </div>
+        </v-card>
+      </v-col>
+
+      <!-- Pumping today -->
+      <v-col cols="12" sm="6" md="4" lg="3">
+        <v-card elevation="2" class="pa-5 text-center h-100">
+          <v-icon icon="mdi-pump" size="40" class="mb-3" color="accent1" />
+          <div class="text-subtitle-1 mb-2">Pumping today</div>
+          <div class="text-h5 font-weight-bold mb-2">
+            <span v-if="statsStore.loading">…</span>
+            <span v-else>{{ pumpingToday }}</span>
+          </div>
+          <div class="text-caption text-medium-emphasis">
+            <span v-if="totalPumpAmountToday">{{ totalPumpAmountToday }} total</span>
+            <span v-else>{{ pumpingToday === "1" ? "session" : "sessions" }}</span>
           </div>
         </v-card>
       </v-col>
 
       <!-- Diapers today -->
-      <v-col cols="12" sm="6" md="3">
-        <v-card elevation="1" class="pa-4 text-center">
-          <v-icon icon="mdi-toilet" size="36" class="mb-2" color="accent2" />
-          <div class="text-subtitle-1">Diapers today</div>
-          <div class="text-h5 font-weight-bold">
+      <v-col cols="12" sm="6" md="4" lg="3">
+        <v-card elevation="2" class="pa-5 text-center h-100">
+          <v-icon icon="mdi-toilet" size="40" class="mb-3" color="accent2" />
+          <div class="text-subtitle-1 mb-2">Diapers today</div>
+          <div class="text-h5 font-weight-bold mb-2">
             <span v-if="statsStore.loading">…</span>
             <span v-else>{{ diapersToday }}</span>
+          </div>
+          <div class="text-caption text-medium-emphasis">
+            {{ diapersToday === "1" ? "diaper" : "diapers" }} changed
           </div>
         </v-card>
       </v-col>
 
-      <!-- Sleeping -->
-      <v-col cols="12" sm="6" md="3">
-        <v-card elevation="1" class="pa-4 text-center">
-          <v-icon icon="mdi-sleep" size="36" class="mb-2" color="accent1" />
-          <div class="text-subtitle-1">{{ sleepingTitle }}</div>
-          <div class="text-h5 font-weight-bold">
+      <!-- Sleep today -->
+      <v-col cols="12" sm="6" md="4" lg="3">
+        <v-card elevation="2" class="pa-5 text-center h-100">
+          <v-icon icon="mdi-sleep" size="40" class="mb-3" color="accent2" />
+          <div class="text-subtitle-1 mb-2">Sleep today</div>
+          <div class="text-h5 font-weight-bold mb-2">
+            <span v-if="statsStore.loading">…</span>
+            <span v-else>{{ sleepToday }}</span>
+          </div>
+          <div v-if="sleepSessionsToday > 0" class="text-caption text-medium-emphasis">
+            {{ sleepSessionsToday }} session{{ sleepSessionsToday > 1 ? 's' : '' }}
+          </div>
+        </v-card>
+      </v-col>
+
+      <!-- Currently sleeping -->
+      <v-col cols="12" sm="6" md="4" lg="3">
+        <v-card elevation="2" class="pa-5 text-center h-100">
+          <v-icon icon="mdi-sleep" size="40" class="mb-3" color="accent1" />
+          <div class="text-subtitle-1 mb-2">{{ sleepingTitle }}</div>
+          <div class="text-h5 font-weight-bold mb-2">
             <span v-if="statsStore.loading">…</span>
             <span v-else>{{ sleepingDisplay }}</span>
           </div>
@@ -47,25 +90,48 @@
         </v-card>
       </v-col>
 
+      <!-- Last Feed -->
+      <v-col cols="12" sm="6" md="4" lg="3">
+        <v-card elevation="2" class="pa-5 text-center h-100">
+          <v-icon icon="mdi-baby-bottle" size="40" class="mb-3" color="accent1" />
+          <div class="text-subtitle-1 mb-2">Last fed</div>
+          <div class="text-h5 font-weight-bold mb-2">
+            <span v-if="statsStore.loading">…</span>
+            <span v-else>{{ lastFedDisplay }}</span>
+          </div>
+          <div v-if="lastFeedAmount" class="text-caption text-medium-emphasis">
+            {{ lastFeedAmount }}
+          </div>
+        </v-card>
+      </v-col>
+
       <!-- Weekly activities -->
-      <v-col cols="12" sm="6" md="3">
-        <v-card elevation="1" class="pa-4 text-center">
-          <v-icon icon="mdi-calendar-week" size="36" class="mb-2" color="accent2" />
-          <div class="text-subtitle-1">Activities this week</div>
-          <div class="text-h5 font-weight-bold">
+      <v-col cols="12" sm="6" md="4" lg="3">
+        <v-card elevation="2" class="pa-5 text-center h-100">
+          <v-icon icon="mdi-calendar-week" size="40" class="mb-3" color="accent2" />
+          <div class="text-subtitle-1 mb-2">Activities this week</div>
+          <div class="text-h5 font-weight-bold mb-2">
             <span v-if="statsStore.loading">…</span>
             <span v-else>{{ activitiesWeek }}</span>
+          </div>
+          <div class="text-caption text-medium-emphasis">
+            total activities
           </div>
         </v-card>
       </v-col>
     </v-row>
 
     <!-- Weekly Averages -->
-    <v-row>
+    <v-row class="mt-6">
+      <v-col cols="12">
+        <h2 class="text-h5 mb-4">Weekly Trends</h2>
+      </v-col>
+    </v-row>
+    <v-row class="mb-4">
       <!-- Avg Counts -->
       <v-col cols="12" md="6">
-        <v-card elevation="1">
-          <v-card-title>Average Daily Counts</v-card-title>
+        <v-card elevation="2" class="h-100">
+          <v-card-title class="text-h6 pb-3">Average Daily Counts</v-card-title>
           <v-card-text>
             <div v-if="statsStore.loading" class="text-center py-10">
               <v-progress-circular indeterminate color="primary" />
@@ -82,8 +148,8 @@
 
       <!-- Avg Sleep -->
       <v-col cols="12" md="6">
-        <v-card elevation="1" class="fill-height">
-          <v-card-title>Average Daily Sleep</v-card-title>
+        <v-card elevation="2" class="h-100">
+          <v-card-title class="text-h6 pb-3">Average Daily Sleep</v-card-title>
           <v-card-text class="d-flex align-center justify-center">
             <div v-if="statsStore.loading" class="text-center">
               <v-progress-circular indeterminate color="primary" />
@@ -100,10 +166,10 @@
     </v-row>
 
     <!-- Weekly Sleep Trend Chart -->
-    <v-row>
+    <v-row class="mb-4">
       <v-col cols="12">
-        <v-card elevation="1">
-          <v-card-title>Weekly Sleep Trend</v-card-title>
+        <v-card elevation="2">
+          <v-card-title class="text-h6 pb-3">Weekly Sleep Trend</v-card-title>
           <v-card-text>
             <div v-if="statsStore.loading" class="text-center py-10">
               <v-progress-circular indeterminate color="primary" />
@@ -225,6 +291,36 @@ const lastFeedAmount = computed(() => {
 
 const diapersToday = computed(() => {
   return statsStore.daily?.counts?.diaper ?? "0";
+});
+
+const feedsToday = computed(() => {
+  return statsStore.daily?.counts?.feed ?? "0";
+});
+
+const totalFeedAmountToday = computed(() => {
+  const amount = statsStore.daily?.totals?.feed_amount_ml;
+  if (!amount || amount === 0) return "";
+  return `${Math.round(amount)} ml`;
+});
+
+const sleepToday = computed(() => {
+  const hours = statsStore.daily?.totals?.sleep_hours;
+  if (!hours || hours === 0) return "0h";
+  return formatHoursMinutes(hours);
+});
+
+const sleepSessionsToday = computed(() => {
+  return statsStore.daily?.counts?.sleep ?? 0;
+});
+
+const pumpingToday = computed(() => {
+  return statsStore.daily?.counts?.pump ?? "0";
+});
+
+const totalPumpAmountToday = computed(() => {
+  const amount = statsStore.daily?.totals?.pump_amount_ml;
+  if (!amount || amount === 0) return "";
+  return `${Math.round(amount)} ml`;
 });
 
 function formatHoursMinutes(hoursFloat) {
