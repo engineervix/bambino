@@ -36,10 +36,13 @@
       <v-col cols="12" sm="6" md="3">
         <v-card elevation="1" class="pa-4 text-center">
           <v-icon icon="mdi-sleep" size="36" class="mb-2" color="accent1" />
-          <div class="text-subtitle-1">Currently sleeping</div>
+          <div class="text-subtitle-1">{{ sleepingTitle }}</div>
           <div class="text-h5 font-weight-bold">
             <span v-if="statsStore.loading">…</span>
             <span v-else>{{ sleepingDisplay }}</span>
+          </div>
+          <div v-if="lastSleepDurationDisplay" class="text-caption text-medium-emphasis">
+            {{ lastSleepDurationDisplay }}
           </div>
         </v-card>
       </v-col>
@@ -240,20 +243,34 @@ const sleepingDisplay = computed(() => {
     const startISO = statsStore.daily?.last_activities?.sleep;
     if (startISO) {
       const diffMs = Date.now() - new Date(startISO).getTime();
-      const minutes = Math.floor(diffMs / 60000);
-      const h = Math.floor(minutes / 60);
-      const m = minutes % 60;
-      return `${h > 0 ? h + "h " : ""}${m}m`;
+      const hours = diffMs / 3600000; // ms in an hour
+      return formatHoursMinutes(hours);
     }
-    return "Sleeping";
+    return "Ongoing";
   }
 
-  // Not sleeping → last sleep duration
-  const dur = statsStore.recent.last_sleep?.duration_hours;
+  // Not sleeping → time ago it ended
+  const lastSleep = statsStore.recent.last_sleep;
+  if (lastSleep?.ended) {
+    return formatTimeAgo(lastSleep.ended);
+  }
+  return "—";
+});
+
+const lastSleepDurationDisplay = computed(() => {
+  if (statsStore.recent?.currently_sleeping) return "";
+  const dur = statsStore.recent?.last_sleep?.duration_hours;
   if (dur !== undefined && dur !== null) {
     return formatHoursMinutes(dur);
   }
-  return "—";
+  return "";
+});
+
+const sleepingTitle = computed(() => {
+  if (statsStore.recent?.currently_sleeping) {
+    return "Currently sleeping";
+  }
+  return "Last sleep";
 });
 
 const activitiesWeek = computed(() => {
