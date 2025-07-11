@@ -118,7 +118,7 @@ func TestGetDailyStats(t *testing.T) {
 		// Check totals
 		assert.Equal(t, 220.0, response.Totals["feed_amount_ml"]) // 120 + 100
 		assert.Equal(t, 150.0, response.Totals["pump_amount_ml"])
-		assert.Equal(t, 2.0, response.Totals["sleep_duration_hours"])
+		assert.Equal(t, 2.0, response.Totals["sleep_hours"])
 
 		// Check last activities
 		assert.NotNil(t, response.LastActivities["feed"])
@@ -270,9 +270,11 @@ func TestGetWeeklyStats(t *testing.T) {
 	ctx := setupTestContext(t)
 	defer ctx.Cleanup()
 
-	// Get start of current week (Monday)
+	// Get start of current week (Sunday)
 	now := time.Now()
-	startOfWeek := now.AddDate(0, 0, -int(now.Weekday()-time.Monday))
+	// Calculate start of week using Sunday as the first day (Sunday=0, Monday=1, ..., Saturday=6)
+	offset := int(now.Weekday())
+	startOfWeek := now.AddDate(0, 0, -offset)
 	startOfWeek = time.Date(startOfWeek.Year(), startOfWeek.Month(), startOfWeek.Day(), 0, 0, 0, 0, startOfWeek.Location())
 
 	// Create activities spread throughout the week

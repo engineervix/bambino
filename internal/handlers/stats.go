@@ -117,6 +117,11 @@ func GetDailyStats(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusNotFound, "Baby not found")
 	}
 
+	// Validate that the requested date is not before baby's birth date
+	if targetDate.Before(baby.BirthDate) {
+		return echo.NewHTTPError(http.StatusBadRequest, "Cannot query dates before baby's birth date")
+	}
+
 	// Get activities for the day, querying in UTC
 	var activities []models.Activity
 	err = db.Preload("FeedActivity").
@@ -170,7 +175,7 @@ func GetDailyStats(c echo.Context) error {
 		case models.ActivityTypeSleep:
 			if activity.EndTime != nil {
 				duration := activity.EndTime.Sub(activity.StartTime).Hours()
-				totals["sleep_duration_hours"] += duration
+				totals["sleep_hours"] += duration
 			}
 		}
 	}
@@ -278,22 +283,30 @@ func GetWeeklyStats(c echo.Context) error {
 	db := c.Get("db").(*gorm.DB)
 	userID := c.Get("user_id").(string)
 
-	// Parse week parameter (optional, defaults to current week)
-	weekStr := c.QueryParam("week")
-	var startDate time.Time
+	// Parse date parameter to determine the week
+	// Support both 'date' and 'week' parameters
+	dateStr := c.QueryParam("date")
+	if dateStr == "" {
+		dateStr = c.QueryParam("week")
+	}
+	var targetDate time.Time
 	var err error
 
-	if weekStr != "" {
-		startDate, err = time.Parse("2006-01-02", weekStr)
+	if dateStr != "" {
+		targetDate, err = time.Parse("2006-01-02", dateStr)
 		if err != nil {
-			return echo.NewHTTPError(http.StatusBadRequest, "Invalid week start date format, use YYYY-MM-DD")
+			return echo.NewHTTPError(http.StatusBadRequest, "Invalid date format, use YYYY-MM-DD")
 		}
 	} else {
-		// Get start of current week (Monday)
-		now := time.Now()
-		startDate = now.AddDate(0, 0, -int(now.Weekday()-time.Monday))
-		startDate = time.Date(startDate.Year(), startDate.Month(), startDate.Day(), 0, 0, 0, 0, startDate.Location())
+		targetDate = time.Now().UTC()
 	}
+
+	// Determine the start of the week (Sunday) for the targetDate
+	weekday := targetDate.Weekday()
+	// Adjust weekday to be Sunday-based (Sunday=0, Monday=1, ..., Saturday=6)
+	offset := int(weekday)
+	startDate := targetDate.AddDate(0, 0, -offset)
+	startDate = time.Date(startDate.Year(), startDate.Month(), startDate.Day(), 0, 0, 0, 0, time.UTC)
 
 	endDate := startDate.AddDate(0, 0, 7)
 
@@ -301,6 +314,11 @@ func GetWeeklyStats(c echo.Context) error {
 	baby, err := getUserBaby(db, userID)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusNotFound, "Baby not found")
+	}
+
+	// Validate that the requested date is not before baby's birth date
+	if targetDate.Before(baby.BirthDate) {
+		return echo.NewHTTPError(http.StatusBadRequest, "Cannot query dates before baby's birth date")
 	}
 
 	// Get activities for the week
