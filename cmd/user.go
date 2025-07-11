@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	"log"
+	"os"
 	"syscall"
 	"time"
 
@@ -78,7 +79,10 @@ func init() {
 func createUser(username, password, babyName string, birthDate time.Time) {
 	// Load .env file
 	if err := godotenv.Load(); err != nil {
-		log.Println("No .env file found")
+		// Only log in development - production uses Docker env vars
+		if os.Getenv("ENV") != "production" {
+			log.Println("No .env file found")
+		}
 	}
 
 	// Load configuration

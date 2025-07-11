@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	"log"
+	"os"
 
 	"github.com/joho/godotenv"
 	"github.com/spf13/cobra"
@@ -64,7 +65,10 @@ func init() {
 func testDatabaseConnection() {
 	// Load .env file
 	if err := godotenv.Load(); err != nil {
-		log.Println("No .env file found")
+		// Only log in development - production uses Docker env vars
+		if os.Getenv("ENV") != "production" {
+			log.Println("No .env file found")
+		}
 	}
 
 	// Load configuration
@@ -126,7 +130,10 @@ func testDatabaseConnection() {
 func runMigrations() {
 	// Load .env file
 	if err := godotenv.Load(); err != nil {
-		log.Println("No .env file found")
+		// Only log in development - production uses Docker env vars
+		if os.Getenv("ENV") != "production" {
+			log.Println("No .env file found")
+		}
 	}
 
 	// Load configuration
@@ -156,7 +163,10 @@ func runMigrations() {
 func rollbackMigration() {
 	// Load .env file
 	if err := godotenv.Load(); err != nil {
-		log.Println("No .env file found")
+		// Only log in development - production uses Docker env vars
+		if os.Getenv("ENV") != "production" {
+			log.Println("No .env file found")
+		}
 	}
 
 	// Load configuration
@@ -186,7 +196,10 @@ func rollbackMigration() {
 func showMigrationStatus() {
 	// Load .env file
 	if err := godotenv.Load(); err != nil {
-		log.Println("No .env file found")
+		// Only log in development - production uses Docker env vars
+		if os.Getenv("ENV") != "production" {
+			log.Println("No .env file found")
+		}
 	}
 
 	// Load configuration

@@ -46,7 +46,10 @@ func init() {
 func runServer(overridePort string) {
 	// Load .env file
 	if err := godotenv.Load(); err != nil {
-		log.Println("No .env file found")
+		// Only log in development - production uses Docker env vars
+		if os.Getenv("ENV") != "production" {
+			log.Println("No .env file found")
+		}
 	}
 
 	// Load configuration
