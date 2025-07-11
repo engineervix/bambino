@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/labstack/echo/v4"
@@ -79,8 +80,9 @@ func GetDailyStats(c echo.Context) error {
 	db := c.Get("db").(*gorm.DB)
 	userID := c.Get("user_id").(string)
 
-	// Parse date parameter (optional, defaults to today)
+	// Parse date and timezone parameters
 	dateStr := c.QueryParam("date")
+	tzOffsetMinutesStr := c.QueryParam("tz_offset")
 	var targetDate time.Time
 	var err error
 
@@ -90,8 +92,24 @@ func GetDailyStats(c echo.Context) error {
 			return echo.NewHTTPError(http.StatusBadRequest, "Invalid date format, use YYYY-MM-DD")
 		}
 	} else {
-		targetDate = time.Now()
+		targetDate = time.Now().UTC()
 	}
+
+	// Adjust for client's timezone offset
+	// The offset from JS's getTimezoneOffset() is inverted compared to Go's FixedZone.
+	// JS: Positive for timezones behind UTC. Go: Positive for timezones ahead of UTC.
+	var location *time.Location = time.UTC
+	if tzOffsetMinutesStr != "" {
+		tzOffsetMinutes, err := strconv.Atoi(tzOffsetMinutesStr)
+		if err == nil {
+			location = time.FixedZone("user_tz", -tzOffsetMinutes*60) // seconds
+		}
+	}
+
+	// Get start and end of the day in the user's timezone
+	year, month, day := targetDate.Date()
+	startOfDay := time.Date(year, month, day, 0, 0, 0, 0, location)
+	endOfDay := startOfDay.AddDate(0, 0, 1)
 
 	// Get user's baby
 	baby, err := getUserBaby(db, userID)
@@ -99,17 +117,13 @@ func GetDailyStats(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusNotFound, "Baby not found")
 	}
 
-	// Get start and end of the day
-	startOfDay := time.Date(targetDate.Year(), targetDate.Month(), targetDate.Day(), 0, 0, 0, 0, targetDate.Location())
-	endOfDay := startOfDay.AddDate(0, 0, 1)
-
-	// Get activities for the day
+	// Get activities for the day, querying in UTC
 	var activities []models.Activity
 	err = db.Preload("FeedActivity").
 		Preload("DiaperActivity").
 		Preload("SleepActivity").
 		Preload("PumpActivity").
-		Where("baby_id = ? AND start_time >= ? AND start_time < ?", baby.ID, startOfDay, endOfDay).
+		Where("baby_id = ? AND start_time >= ? AND start_time < ?", baby.ID, startOfDay.UTC(), endOfDay.UTC()).
 		Find(&activities).Error
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, "Failed to fetch activities")
@@ -170,7 +184,7 @@ func GetDailyStats(c echo.Context) error {
 	}
 
 	response := DailyStatsResponse{
-		Date:            targetDate.Format("2006-01-02"),
+		Date:            startOfDay.Format("2006-01-02"),
 		Counts:          counts,
 		Totals:          totals,
 		LastActivities:  lastActivities,

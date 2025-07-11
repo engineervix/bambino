@@ -1,4 +1,5 @@
 import { defineStore } from "pinia";
+import { format } from "date-fns";
 import apiClient from "@/api/client";
 
 export const useStatsStore = defineStore("stats", {
@@ -16,9 +17,13 @@ export const useStatsStore = defineStore("stats", {
       this.loading = true;
       this.error = null;
       try {
+        const today = new Date();
+        const dateStr = format(today, "yyyy-MM-dd");
+        const timezoneOffset = today.getTimezoneOffset();
+
         const [recentRes, dailyRes, weeklyRes] = await Promise.all([
           apiClient.get("/stats/recent"),
-          apiClient.get("/stats/daily"),
+          apiClient.get(`/stats/daily?date=${dateStr}&tz_offset=${timezoneOffset}`),
           apiClient.get("/stats/weekly"),
         ]);
 
