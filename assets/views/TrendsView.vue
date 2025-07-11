@@ -69,9 +69,7 @@
                       <div class="mt-1" v-if="statsStore.babyBirthDate">
                         • From: {{ formatDate(new Date(statsStore.babyBirthDate), "MMM d, yyyy") }}
                       </div>
-                      <div>
-                        • To: {{ formatDate(new Date(today), "MMM d, yyyy") }}
-                      </div>
+                      <div>• To: {{ formatDate(new Date(today), "MMM d, yyyy") }}</div>
                     </div>
                   </template>
                 </v-date-picker>
@@ -88,11 +86,7 @@
 
             <!-- Controls row -->
             <div class="d-flex align-center ga-2">
-              <v-progress-circular
-                v-if="statsStore.dailyLoading"
-                indeterminate
-                size="24"
-              ></v-progress-circular>
+              <v-progress-circular v-if="statsStore.dailyLoading" indeterminate size="24"></v-progress-circular>
 
               <!-- Quick jump to today -->
               <v-btn
@@ -117,7 +111,15 @@
       <v-col cols="6" sm="6" md="3">
         <v-card elevation="2" class="pa-4 pa-sm-5 text-center h-100 position-relative overflow-hidden">
           <!-- Background gradient -->
-          <div class="position-absolute w-100 h-100" style="top: 0; left: 0; background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(147, 51, 234, 0.1) 100%); border-radius: inherit;"></div>
+          <div
+            class="position-absolute w-100 h-100"
+            style="
+              top: 0;
+              left: 0;
+              background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(147, 51, 234, 0.1) 100%);
+              border-radius: inherit;
+            "
+          ></div>
 
           <div class="position-relative">
             <v-icon icon="mdi-baby-bottle" :size="$vuetify.display.xs ? 32 : 40" class="mb-2 mb-sm-3" color="accent1" />
@@ -138,7 +140,15 @@
       <v-col cols="6" sm="6" md="3">
         <v-card elevation="2" class="pa-4 pa-sm-5 text-center h-100 position-relative overflow-hidden">
           <!-- Background gradient -->
-          <div class="position-absolute w-100 h-100" style="top: 0; left: 0; background: linear-gradient(135deg, rgba(34, 197, 94, 0.1) 0%, rgba(59, 130, 246, 0.1) 100%); border-radius: inherit;"></div>
+          <div
+            class="position-absolute w-100 h-100"
+            style="
+              top: 0;
+              left: 0;
+              background: linear-gradient(135deg, rgba(34, 197, 94, 0.1) 0%, rgba(59, 130, 246, 0.1) 100%);
+              border-radius: inherit;
+            "
+          ></div>
 
           <div class="position-relative">
             <v-icon icon="mdi-pump" :size="$vuetify.display.xs ? 32 : 40" class="mb-2 mb-sm-3" color="accent1" />
@@ -159,7 +169,15 @@
       <v-col cols="6" sm="6" md="3">
         <v-card elevation="2" class="pa-4 pa-sm-5 text-center h-100 position-relative overflow-hidden">
           <!-- Background gradient -->
-          <div class="position-absolute w-100 h-100" style="top: 0; left: 0; background: linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, rgba(236, 72, 153, 0.1) 100%); border-radius: inherit;"></div>
+          <div
+            class="position-absolute w-100 h-100"
+            style="
+              top: 0;
+              left: 0;
+              background: linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, rgba(236, 72, 153, 0.1) 100%);
+              border-radius: inherit;
+            "
+          ></div>
 
           <div class="position-relative">
             <v-icon icon="mdi-toilet" :size="$vuetify.display.xs ? 32 : 40" class="mb-2 mb-sm-3" color="accent2" />
@@ -173,9 +191,7 @@
               <span v-else-if="diaperBreakdown">
                 {{ diaperBreakdown.wet }} wet, {{ diaperBreakdown.dirty }} dirty
               </span>
-              <span v-else>
-                {{ diapersToday === "1" ? "diaper" : "diapers" }} changed
-              </span>
+              <span v-else> {{ diapersToday === "1" ? "diaper" : "diapers" }} changed </span>
             </div>
           </div>
         </v-card>
@@ -185,7 +201,15 @@
       <v-col cols="6" sm="6" md="3">
         <v-card elevation="2" class="pa-4 pa-sm-5 text-center h-100 position-relative overflow-hidden">
           <!-- Background gradient -->
-          <div class="position-absolute w-100 h-100" style="top: 0; left: 0; background: linear-gradient(135deg, rgba(168, 85, 247, 0.1) 0%, rgba(236, 72, 153, 0.1) 100%); border-radius: inherit;"></div>
+          <div
+            class="position-absolute w-100 h-100"
+            style="
+              top: 0;
+              left: 0;
+              background: linear-gradient(135deg, rgba(168, 85, 247, 0.1) 0%, rgba(236, 72, 153, 0.1) 100%);
+              border-radius: inherit;
+            "
+          ></div>
 
           <div class="position-relative">
             <v-icon icon="mdi-sleep" :size="$vuetify.display.xs ? 32 : 40" class="mb-2 mb-sm-3" color="accent2" />
@@ -195,7 +219,7 @@
               <span v-else>{{ sleepToday }}</span>
             </div>
             <div v-if="sleepSessionsToday > 0" class="text-caption text-medium-emphasis">
-              {{ sleepSessionsToday }} session{{ sleepSessionsToday > 1 ? 's' : '' }}
+              {{ sleepSessionsToday }} session{{ sleepSessionsToday > 1 ? "s" : "" }}
             </div>
           </div>
         </v-card>
@@ -218,10 +242,18 @@
           elevation="1"
           class="pa-4 pa-sm-5 h-100 position-relative overflow-hidden"
           :class="{ 'border-thin': true }"
-          style="border-color: rgba(var(--v-theme-primary), 0.2);"
+          style="border-color: rgba(var(--v-theme-primary), 0.2)"
         >
           <!-- Subtle background pattern -->
-          <div class="position-absolute w-100 h-100" style="top: 0; left: 0; background: linear-gradient(135deg, rgba(245, 158, 11, 0.06) 0%, rgba(168, 85, 247, 0.06) 100%); border-radius: inherit;"></div>
+          <div
+            class="position-absolute w-100 h-100"
+            style="
+              top: 0;
+              left: 0;
+              background: linear-gradient(135deg, rgba(245, 158, 11, 0.06) 0%, rgba(168, 85, 247, 0.06) 100%);
+              border-radius: inherit;
+            "
+          ></div>
 
           <div class="position-relative d-flex align-center">
             <!-- Status indicator -->
@@ -237,7 +269,7 @@
                   dot
                   color="success"
                   class="position-absolute"
-                  style="top: -2px; right: -2px;"
+                  style="top: -2px; right: -2px"
                 ></v-badge>
               </div>
             </div>
@@ -245,7 +277,10 @@
             <!-- Content -->
             <div class="flex-grow-1">
               <div class="text-subtitle-1 text-sm-h6 mb-1 font-weight-medium">{{ sleepingTitle }}</div>
-              <div class="text-h6 text-sm-h5 font-weight-bold mb-1" :class="statsStore.recent?.currently_sleeping ? 'text-success' : ''">
+              <div
+                class="text-h6 text-sm-h5 font-weight-bold mb-1"
+                :class="statsStore.recent?.currently_sleeping ? 'text-success' : ''"
+              >
                 <span v-if="statsStore.loading">…</span>
                 <span v-else>{{ sleepingDisplay }}</span>
               </div>
@@ -267,10 +302,18 @@
           elevation="1"
           class="pa-4 pa-sm-5 h-100 position-relative overflow-hidden"
           :class="{ 'border-thin': true }"
-          style="border-color: rgba(var(--v-theme-primary), 0.2);"
+          style="border-color: rgba(var(--v-theme-primary), 0.2)"
         >
           <!-- Subtle background pattern -->
-          <div class="position-absolute w-100 h-100" style="top: 0; left: 0; background: linear-gradient(135deg, rgba(34, 197, 94, 0.06) 0%, rgba(245, 158, 11, 0.06) 100%); border-radius: inherit;"></div>
+          <div
+            class="position-absolute w-100 h-100"
+            style="
+              top: 0;
+              left: 0;
+              background: linear-gradient(135deg, rgba(34, 197, 94, 0.06) 0%, rgba(245, 158, 11, 0.06) 100%);
+              border-radius: inherit;
+            "
+          ></div>
 
           <div class="position-relative d-flex align-center">
             <!-- Icon -->
@@ -285,9 +328,7 @@
                 <span v-if="statsStore.loading">…</span>
                 <span v-else>{{ lastFedDisplay }}</span>
               </div>
-              <div v-if="lastFeedAmount" class="text-caption text-medium-emphasis">
-                Amount: {{ lastFeedAmount }}
-              </div>
+              <div v-if="lastFeedAmount" class="text-caption text-medium-emphasis">Amount: {{ lastFeedAmount }}</div>
             </div>
           </div>
         </v-card>
@@ -305,23 +346,37 @@
       <v-col cols="12" sm="6" md="4">
         <v-card elevation="2" class="pa-4 pa-sm-6 text-center h-100 position-relative overflow-hidden">
           <!-- Background gradient -->
-          <div class="position-absolute w-100 h-100" style="top: 0; left: 0; background: linear-gradient(135deg, rgba(236, 72, 153, 0.1) 0%, rgba(99, 102, 241, 0.1) 100%); border-radius: inherit;"></div>
+          <div
+            class="position-absolute w-100 h-100"
+            style="
+              top: 0;
+              left: 0;
+              background: linear-gradient(135deg, rgba(236, 72, 153, 0.1) 0%, rgba(99, 102, 241, 0.1) 100%);
+              border-radius: inherit;
+            "
+          ></div>
 
           <!-- Background decorative icon - hidden on mobile -->
-          <div class="position-absolute d-none d-sm-block" style="top: -10px; right: -10px; opacity: 0.08; transform: rotate(15deg);">
+          <div
+            class="position-absolute d-none d-sm-block"
+            style="top: -10px; right: -10px; opacity: 0.08; transform: rotate(15deg)"
+          >
             <v-icon icon="mdi-chart-line" size="120" color="accent2" />
           </div>
 
           <div class="position-relative">
-            <v-icon icon="mdi-calendar-week" :size="$vuetify.display.xs ? 40 : 48" class="mb-3 mb-sm-4" color="accent2" />
+            <v-icon
+              icon="mdi-calendar-week"
+              :size="$vuetify.display.xs ? 40 : 48"
+              class="mb-3 mb-sm-4"
+              color="accent2"
+            />
             <div class="text-subtitle-1 text-sm-h6 mb-2 mb-sm-3 font-weight-medium">Activities (past 7 days)</div>
-            <div class="text-h4 text-sm-h3 font-weight-bold mb-2 mb-sm-3" style="color: #ec4899;">
+            <div class="text-h4 text-sm-h3 font-weight-bold mb-2 mb-sm-3" style="color: #ec4899">
               <span v-if="statsStore.loading">…</span>
               <span v-else>{{ activitiesWeek }}</span>
             </div>
-            <div class="text-body-2 text-medium-emphasis mb-1 mb-sm-2">
-              total activities
-            </div>
+            <div class="text-body-2 text-medium-emphasis mb-1 mb-sm-2">total activities</div>
             <div class="text-caption text-medium-emphasis">
               <v-icon icon="mdi-trending-up" size="16" class="mr-1" />
               {{ Math.round((activitiesWeek / 7) * 10) / 10 }} per day average
@@ -334,10 +389,21 @@
       <v-col cols="12" sm="6" md="4">
         <v-card elevation="2" class="pa-4 pa-sm-6 text-center h-100 position-relative overflow-hidden">
           <!-- Background gradient -->
-          <div class="position-absolute w-100 h-100" style="top: 0; left: 0; background: linear-gradient(135deg, rgba(245, 158, 11, 0.1) 0%, rgba(168, 85, 247, 0.1) 100%); border-radius: inherit;"></div>
+          <div
+            class="position-absolute w-100 h-100"
+            style="
+              top: 0;
+              left: 0;
+              background: linear-gradient(135deg, rgba(245, 158, 11, 0.1) 0%, rgba(168, 85, 247, 0.1) 100%);
+              border-radius: inherit;
+            "
+          ></div>
 
           <!-- Background decorative icon - hidden on mobile -->
-          <div class="position-absolute d-none d-sm-block" style="top: -15px; right: -15px; opacity: 0.08; transform: rotate(-15deg);">
+          <div
+            class="position-absolute d-none d-sm-block"
+            style="top: -15px; right: -15px; opacity: 0.08; transform: rotate(-15deg)"
+          >
             <v-icon icon="mdi-sleep" size="140" color="amber" />
           </div>
 
@@ -355,9 +421,7 @@
               <div class="text-h4 text-sm-h2 font-weight-bold mb-2 mb-sm-3" style="color: #f59e0b">
                 {{ avgSleep }}
               </div>
-              <div class="text-body-2 text-medium-emphasis mb-1 mb-sm-2">
-                per night
-              </div>
+              <div class="text-body-2 text-medium-emphasis mb-1 mb-sm-2">per night</div>
               <div class="text-caption text-medium-emphasis">
                 <v-icon icon="mdi-moon-waning-crescent" size="16" class="mr-1" />
                 Based on past 7 days of data
@@ -371,10 +435,21 @@
       <v-col cols="12" md="4">
         <v-card elevation="2" class="pa-4 pa-sm-6 h-100 position-relative overflow-hidden">
           <!-- Background gradient -->
-          <div class="position-absolute w-100 h-100" style="top: 0; left: 0; background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(34, 197, 94, 0.1) 100%); border-radius: inherit;"></div>
+          <div
+            class="position-absolute w-100 h-100"
+            style="
+              top: 0;
+              left: 0;
+              background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(34, 197, 94, 0.1) 100%);
+              border-radius: inherit;
+            "
+          ></div>
 
           <!-- Background decorative icon - hidden on mobile -->
-          <div class="position-absolute d-none d-sm-block" style="top: -10px; left: -10px; opacity: 0.08; transform: rotate(-10deg);">
+          <div
+            class="position-absolute d-none d-sm-block"
+            style="top: -10px; left: -10px; opacity: 0.08; transform: rotate(-10deg)"
+          >
             <v-icon icon="mdi-chart-bar" size="130" color="primary" />
           </div>
 
@@ -382,7 +457,9 @@
             <div class="text-center mb-3 mb-sm-4">
               <v-icon icon="mdi-chart-bar" :size="$vuetify.display.xs ? 40 : 48" color="primary" />
             </div>
-            <div class="text-subtitle-1 text-sm-h6 mb-3 mb-sm-4 font-weight-medium text-center">Average Daily Counts</div>
+            <div class="text-subtitle-1 text-sm-h6 mb-3 mb-sm-4 font-weight-medium text-center">
+              Average Daily Counts
+            </div>
 
             <div v-if="statsStore.loading" class="text-center py-6 py-sm-10">
               <v-progress-circular indeterminate color="primary" :size="$vuetify.display.xs ? 32 : 40" />
@@ -396,14 +473,14 @@
                 <!-- Mobile: Show simplified data instead of chart -->
                 <div class="d-flex justify-space-around align-center h-100">
                   <div class="text-center">
-                    <div class="text-h6 font-weight-bold mb-1" style="color: #6366f1;">
-                      {{ avgCountsChartData.datasets[0]?.data[0] || '0' }}
+                    <div class="text-h6 font-weight-bold mb-1" style="color: #6366f1">
+                      {{ avgCountsChartData.datasets[0]?.data[0] || "0" }}
                     </div>
                     <div class="text-caption">Diapers</div>
                   </div>
                   <div class="text-center">
-                    <div class="text-h6 font-weight-bold mb-1" style="color: #ec4899;">
-                      {{ avgCountsChartData.datasets[0]?.data[1] || '0' }}
+                    <div class="text-h6 font-weight-bold mb-1" style="color: #ec4899">
+                      {{ avgCountsChartData.datasets[0]?.data[1] || "0" }}
                     </div>
                     <div class="text-caption">Feeds</div>
                   </div>
@@ -423,7 +500,15 @@
       <v-col cols="12">
         <v-card elevation="2" class="position-relative overflow-hidden">
           <!-- Background gradient -->
-          <div class="position-absolute w-100 h-100" style="top: 0; left: 0; background: linear-gradient(135deg, rgba(245, 158, 11, 0.05) 0%, rgba(236, 72, 153, 0.05) 100%); border-radius: inherit;"></div>
+          <div
+            class="position-absolute w-100 h-100"
+            style="
+              top: 0;
+              left: 0;
+              background: linear-gradient(135deg, rgba(245, 158, 11, 0.05) 0%, rgba(236, 72, 153, 0.05) 100%);
+              border-radius: inherit;
+            "
+          ></div>
 
           <div class="position-relative">
             <v-card-title class="text-subtitle-1 text-sm-h6 pb-2 pb-sm-3">Sleep Trend (Past 7 Days)</v-card-title>
@@ -460,7 +545,7 @@ const { xs } = useDisplay();
 // Date picker state
 const datePickerMenu = ref(false);
 const selectedDate = ref(null);
-const today = new Date().toISOString().split('T')[0]; // Format for v-date-picker
+const today = new Date().toISOString().split("T")[0]; // Format for v-date-picker
 
 // Fetch stats on mount
 onMounted(() => {
@@ -477,7 +562,7 @@ const minDate = computed(() => {
   // Fallback: limit to 1 year ago if nothing else is available
   const oneYearAgo = new Date();
   oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
-  return oneYearAgo.toISOString().split('T')[0];
+  return oneYearAgo.toISOString().split("T")[0];
 });
 
 const onDateSelected = (date) => {

@@ -25,13 +25,14 @@ export const useStatsStore = defineStore("stats", {
         const response = await apiClient.get("/babies");
         // Assuming user has at least one baby, take the first one
         if (response.data && response.data.length > 0) {
-          this.babyBirthDate = response.data[0].birth_date.split('T')[0]; // Convert to YYYY-MM-DD format
+          this.babyBirthDate = response.data[0].birth_date.split("T")[0]; // Convert to YYYY-MM-DD format
         }
       } catch (err) {
         console.error("Failed to fetch baby birth date:", err);
         this.babyBirthDate = null;
       }
-    },    async setDailyDate(date) {
+    },
+    async setDailyDate(date) {
       if (date instanceof Date) {
         this.dailyDate = date;
       } else {
