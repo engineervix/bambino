@@ -56,7 +56,7 @@
     <div v-else-if="activity.type === 'sleep' && activity.sleep_data">
       <div class="d-flex align-center mb-1">
         <span class="text-body-2">
-          {{ activity.sleep_data.location || "Sleep" }}
+          {{ getSleepLocationLabel(activity.sleep_data.location) }}
         </span>
         <v-rating
           v-if="activity.sleep_data.quality"
@@ -195,6 +195,19 @@ function getPumpBreastLabel(breast) {
     both: "Both Breasts",
   };
   return labels[breast] || breast;
+}
+
+// Sleep location helpers
+function getSleepLocationLabel(location) {
+  const labels = {
+    crib: "Crib",
+    bassinet: "Bassinet",
+    car_seat: "Car Seat",
+    stroller: "Stroller",
+    parent_bed: "Parent Bed",
+    other: "Other",
+  };
+  return labels[location] || location || "Sleep";
 }
 
 // Health type helpers
