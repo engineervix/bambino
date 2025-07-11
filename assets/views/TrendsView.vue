@@ -1,28 +1,126 @@
 <template>
-  <v-container>
+  <v-container class="pa-3 pa-sm-4">
     <v-row>
       <v-col cols="12">
-        <h1 class="text-h4 mb-4">Trends &amp; Statistics</h1>
+        <h1 class="text-h5 text-sm-h4 mb-3 mb-sm-4">Trends &amp; Statistics</h1>
       </v-col>
     </v-row>
 
     <!-- Daily Totals -->
     <v-row>
       <v-col cols="12">
-        <h2 class="text-h5 mb-4">Today's Summary</h2>
+        <!-- Mobile-friendly header layout -->
+        <div class="mb-4">
+          <h2 class="text-h5 mb-3">
+            {{ dailySummaryTitle }}
+          </h2>
+
+          <!-- Date Selection Controls - Mobile optimized -->
+          <div class="d-flex flex-column flex-sm-row align-start align-sm-center ga-3">
+            <!-- Error message if any -->
+            <v-alert
+              v-if="statsStore.error"
+              type="warning"
+              density="compact"
+              class="mb-2 text-caption w-100"
+              closable
+              @click:close="statsStore.error = null"
+            >
+              {{ statsStore.error }}
+            </v-alert>
+
+            <!-- Date navigation row -->
+            <div class="d-flex align-center">
+              <v-btn
+                icon="mdi-chevron-left"
+                variant="text"
+                size="large"
+                @click="statsStore.changeDay('prev')"
+                :disabled="statsStore.dailyLoading"
+              ></v-btn>
+
+              <!-- Date display with date picker -->
+              <v-menu v-model="datePickerMenu" :close-on-content-click="false">
+                <template v-slot:activator="{ props }">
+                  <v-btn
+                    v-bind="props"
+                    variant="text"
+                    class="text-subtitle-1 text-sm-h6 font-weight-regular px-2 px-sm-4"
+                    :loading="statsStore.dailyLoading"
+                    size="large"
+                  >
+                    {{ formattedDailyDate }}
+                    <v-icon icon="mdi-calendar" class="ml-2" size="20"></v-icon>
+                  </v-btn>
+                </template>
+
+                <v-date-picker
+                  v-model="selectedDate"
+                  @update:model-value="onDateSelected"
+                  :min="minDate"
+                  :max="today"
+                  show-adjacent-months
+                  color="primary"
+                >
+                  <template v-slot:footer>
+                    <div class="pa-3 text-caption text-medium-emphasis">
+                      <v-icon icon="mdi-information-outline" size="16" class="mr-1"></v-icon>
+                      <div>Date range:</div>
+                      <div class="mt-1" v-if="statsStore.babyBirthDate">
+                        • From: {{ formatDate(new Date(statsStore.babyBirthDate), "MMM d, yyyy") }}
+                      </div>
+                      <div>
+                        • To: {{ formatDate(new Date(today), "MMM d, yyyy") }}
+                      </div>
+                    </div>
+                  </template>
+                </v-date-picker>
+              </v-menu>
+
+              <v-btn
+                icon="mdi-chevron-right"
+                variant="text"
+                size="large"
+                @click="statsStore.changeDay('next')"
+                :disabled="statsStore.isViewingToday || statsStore.dailyLoading"
+              ></v-btn>
+            </div>
+
+            <!-- Controls row -->
+            <div class="d-flex align-center ga-2">
+              <v-progress-circular
+                v-if="statsStore.dailyLoading"
+                indeterminate
+                size="24"
+              ></v-progress-circular>
+
+              <!-- Quick jump to today -->
+              <v-btn
+                v-if="!statsStore.isViewingToday"
+                variant="outlined"
+                size="small"
+                class="text-caption"
+                @click="jumpToToday"
+                :disabled="statsStore.dailyLoading"
+              >
+                Today
+              </v-btn>
+            </div>
+          </div>
+        </div>
       </v-col>
     </v-row>
     <v-row class="mb-4">
       <!-- Feeds today -->
-      <v-col cols="12" sm="6" md="4" lg="3">
-        <v-card elevation="2" class="pa-5 text-center h-100 position-relative overflow-hidden">
+      <v-col cols="6" sm="6" md="4" lg="3">
+        <v-card elevation="2" class="pa-4 pa-sm-5 text-center h-100 position-relative overflow-hidden">
           <!-- Background gradient -->
           <div class="position-absolute w-100 h-100" style="top: 0; left: 0; background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(147, 51, 234, 0.1) 100%); border-radius: inherit;"></div>
 
           <div class="position-relative">
-            <v-icon icon="mdi-baby-bottle" size="40" class="mb-3" color="accent1" />
-            <div class="text-subtitle-1 mb-2">Feeds today</div>
-            <div class="text-h5 font-weight-bold mb-2">
+            <v-icon icon="mdi-baby-bottle" :size="$vuetify.display.xs ? 32 : 40" class="mb-2 mb-sm-3" color="accent1" />
+            <div class="text-body-2 text-sm-subtitle-1 mb-1 mb-sm-2">{{ feedsLabel }}</div>
+            <div class="text-h6 text-sm-h5 font-weight-bold mb-1 mb-sm-2">
               <span v-if="statsStore.loading">…</span>
               <span v-else>{{ feedsToday }}</span>
             </div>
@@ -35,15 +133,15 @@
       </v-col>
 
       <!-- Pumping today -->
-      <v-col cols="12" sm="6" md="4" lg="3">
-        <v-card elevation="2" class="pa-5 text-center h-100 position-relative overflow-hidden">
+      <v-col cols="6" sm="6" md="4" lg="3">
+        <v-card elevation="2" class="pa-4 pa-sm-5 text-center h-100 position-relative overflow-hidden">
           <!-- Background gradient -->
           <div class="position-absolute w-100 h-100" style="top: 0; left: 0; background: linear-gradient(135deg, rgba(34, 197, 94, 0.1) 0%, rgba(59, 130, 246, 0.1) 100%); border-radius: inherit;"></div>
 
           <div class="position-relative">
-            <v-icon icon="mdi-pump" size="40" class="mb-3" color="accent1" />
-            <div class="text-subtitle-1 mb-2">Pumping today</div>
-            <div class="text-h5 font-weight-bold mb-2">
+            <v-icon icon="mdi-pump" :size="$vuetify.display.xs ? 32 : 40" class="mb-2 mb-sm-3" color="accent1" />
+            <div class="text-body-2 text-sm-subtitle-1 mb-1 mb-sm-2">{{ pumpingLabel }}</div>
+            <div class="text-h6 text-sm-h5 font-weight-bold mb-1 mb-sm-2">
               <span v-if="statsStore.loading">…</span>
               <span v-else>{{ pumpingToday }}</span>
             </div>
@@ -56,15 +154,15 @@
       </v-col>
 
       <!-- Diapers today -->
-      <v-col cols="12" sm="6" md="4" lg="3">
-        <v-card elevation="2" class="pa-5 text-center h-100 position-relative overflow-hidden">
+      <v-col cols="6" sm="6" md="4" lg="3">
+        <v-card elevation="2" class="pa-4 pa-sm-5 text-center h-100 position-relative overflow-hidden">
           <!-- Background gradient -->
           <div class="position-absolute w-100 h-100" style="top: 0; left: 0; background: linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, rgba(236, 72, 153, 0.1) 100%); border-radius: inherit;"></div>
 
           <div class="position-relative">
-            <v-icon icon="mdi-toilet" size="40" class="mb-3" color="accent2" />
-            <div class="text-subtitle-1 mb-2">Diapers today</div>
-            <div class="text-h5 font-weight-bold mb-2">
+            <v-icon icon="mdi-toilet" :size="$vuetify.display.xs ? 32 : 40" class="mb-2 mb-sm-3" color="accent2" />
+            <div class="text-body-2 text-sm-subtitle-1 mb-1 mb-sm-2">{{ diapersLabel }}</div>
+            <div class="text-h6 text-sm-h5 font-weight-bold mb-1 mb-sm-2">
               <span v-if="statsStore.loading">…</span>
               <span v-else>{{ diapersToday }}</span>
             </div>
@@ -82,15 +180,15 @@
       </v-col>
 
       <!-- Sleep today -->
-      <v-col cols="12" sm="6" md="4" lg="3">
-        <v-card elevation="2" class="pa-5 text-center h-100 position-relative overflow-hidden">
+      <v-col cols="6" sm="6" md="4" lg="3">
+        <v-card elevation="2" class="pa-4 pa-sm-5 text-center h-100 position-relative overflow-hidden">
           <!-- Background gradient -->
           <div class="position-absolute w-100 h-100" style="top: 0; left: 0; background: linear-gradient(135deg, rgba(168, 85, 247, 0.1) 0%, rgba(236, 72, 153, 0.1) 100%); border-radius: inherit;"></div>
 
           <div class="position-relative">
-            <v-icon icon="mdi-sleep" size="40" class="mb-3" color="accent2" />
-            <div class="text-subtitle-1 mb-2">Sleep today</div>
-            <div class="text-h5 font-weight-bold mb-2">
+            <v-icon icon="mdi-sleep" :size="$vuetify.display.xs ? 32 : 40" class="mb-2 mb-sm-3" color="accent2" />
+            <div class="text-body-2 text-sm-subtitle-1 mb-1 mb-sm-2">{{ sleepLabel }}</div>
+            <div class="text-h6 text-sm-h5 font-weight-bold mb-1 mb-sm-2">
               <span v-if="statsStore.loading">…</span>
               <span v-else>{{ sleepToday }}</span>
             </div>
@@ -102,15 +200,15 @@
       </v-col>
 
       <!-- Currently sleeping -->
-      <v-col cols="12" sm="6" md="4" lg="3">
-        <v-card elevation="2" class="pa-5 text-center h-100 position-relative overflow-hidden">
+      <v-col cols="6" sm="6" md="4" lg="3">
+        <v-card elevation="2" class="pa-4 pa-sm-5 text-center h-100 position-relative overflow-hidden">
           <!-- Background gradient -->
           <div class="position-absolute w-100 h-100" style="top: 0; left: 0; background: linear-gradient(135deg, rgba(245, 158, 11, 0.1) 0%, rgba(168, 85, 247, 0.1) 100%); border-radius: inherit;"></div>
 
           <div class="position-relative">
-            <v-icon icon="mdi-sleep" size="40" class="mb-3" color="accent1" />
-            <div class="text-subtitle-1 mb-2">{{ sleepingTitle }}</div>
-            <div class="text-h5 font-weight-bold mb-2">
+            <v-icon icon="mdi-sleep" :size="$vuetify.display.xs ? 32 : 40" class="mb-2 mb-sm-3" color="accent1" />
+            <div class="text-body-2 text-sm-subtitle-1 mb-1 mb-sm-2">{{ sleepingTitle }}</div>
+            <div class="text-h6 text-sm-h5 font-weight-bold mb-1 mb-sm-2">
               <span v-if="statsStore.loading">…</span>
               <span v-else>{{ sleepingDisplay }}</span>
             </div>
@@ -122,15 +220,15 @@
       </v-col>
 
       <!-- Last Feed -->
-      <v-col cols="12" sm="6" md="4" lg="3">
-        <v-card elevation="2" class="pa-5 text-center h-100 position-relative overflow-hidden">
+      <v-col cols="6" sm="6" md="4" lg="3">
+        <v-card elevation="2" class="pa-4 pa-sm-5 text-center h-100 position-relative overflow-hidden">
           <!-- Background gradient -->
           <div class="position-absolute w-100 h-100" style="top: 0; left: 0; background: linear-gradient(135deg, rgba(34, 197, 94, 0.1) 0%, rgba(245, 158, 11, 0.1) 100%); border-radius: inherit;"></div>
 
           <div class="position-relative">
-            <v-icon icon="mdi-baby-bottle" size="40" class="mb-3" color="accent1" />
-            <div class="text-subtitle-1 mb-2">Last fed</div>
-            <div class="text-h5 font-weight-bold mb-2">
+            <v-icon icon="mdi-baby-bottle" :size="$vuetify.display.xs ? 32 : 40" class="mb-2 mb-sm-3" color="accent1" />
+            <div class="text-body-2 text-sm-subtitle-1 mb-1 mb-sm-2">Last fed</div>
+            <div class="text-h6 text-sm-h5 font-weight-bold mb-1 mb-sm-2">
               <span v-if="statsStore.loading">…</span>
               <span v-else>{{ lastFedDisplay }}</span>
             </div>
@@ -143,31 +241,31 @@
     </v-row>
 
     <!-- Weekly Averages -->
-    <v-row class="mt-6">
+    <v-row class="mt-4 mt-sm-6">
       <v-col cols="12">
-        <h2 class="text-h5 mb-4">Weekly Trends</h2>
+        <h2 class="text-h5 mb-3 mb-sm-4">Weekly Trends</h2>
       </v-col>
     </v-row>
     <v-row class="mb-4">
       <!-- Weekly activities -->
-      <v-col cols="12" md="4">
-        <v-card elevation="2" class="pa-6 text-center h-100 position-relative overflow-hidden">
+      <v-col cols="12" sm="6" md="4">
+        <v-card elevation="2" class="pa-4 pa-sm-6 text-center h-100 position-relative overflow-hidden">
           <!-- Background gradient -->
           <div class="position-absolute w-100 h-100" style="top: 0; left: 0; background: linear-gradient(135deg, rgba(236, 72, 153, 0.1) 0%, rgba(99, 102, 241, 0.1) 100%); border-radius: inherit;"></div>
 
-          <!-- Background decorative icon -->
-          <div class="position-absolute" style="top: -10px; right: -10px; opacity: 0.08; transform: rotate(15deg);">
+          <!-- Background decorative icon - hidden on mobile -->
+          <div class="position-absolute d-none d-sm-block" style="top: -10px; right: -10px; opacity: 0.08; transform: rotate(15deg);">
             <v-icon icon="mdi-chart-line" size="120" color="accent2" />
           </div>
 
           <div class="position-relative">
-            <v-icon icon="mdi-calendar-week" size="48" class="mb-4" color="accent2" />
-            <div class="text-h6 mb-3 font-weight-medium">Activities this week</div>
-            <div class="text-h3 font-weight-bold mb-3" style="color: #ec4899;">
+            <v-icon icon="mdi-calendar-week" :size="$vuetify.display.xs ? 40 : 48" class="mb-3 mb-sm-4" color="accent2" />
+            <div class="text-subtitle-1 text-sm-h6 mb-2 mb-sm-3 font-weight-medium">Activities this week</div>
+            <div class="text-h4 text-sm-h3 font-weight-bold mb-2 mb-sm-3" style="color: #ec4899;">
               <span v-if="statsStore.loading">…</span>
               <span v-else>{{ activitiesWeek }}</span>
             </div>
-            <div class="text-body-2 text-medium-emphasis mb-2">
+            <div class="text-body-2 text-medium-emphasis mb-1 mb-sm-2">
               total activities
             </div>
             <div class="text-caption text-medium-emphasis">
@@ -179,31 +277,31 @@
       </v-col>
 
       <!-- Avg Sleep -->
-      <v-col cols="12" md="4">
-        <v-card elevation="2" class="pa-6 text-center h-100 position-relative overflow-hidden">
+      <v-col cols="12" sm="6" md="4">
+        <v-card elevation="2" class="pa-4 pa-sm-6 text-center h-100 position-relative overflow-hidden">
           <!-- Background gradient -->
           <div class="position-absolute w-100 h-100" style="top: 0; left: 0; background: linear-gradient(135deg, rgba(245, 158, 11, 0.1) 0%, rgba(168, 85, 247, 0.1) 100%); border-radius: inherit;"></div>
 
-          <!-- Background decorative icon -->
-          <div class="position-absolute" style="top: -15px; right: -15px; opacity: 0.08; transform: rotate(-15deg);">
+          <!-- Background decorative icon - hidden on mobile -->
+          <div class="position-absolute d-none d-sm-block" style="top: -15px; right: -15px; opacity: 0.08; transform: rotate(-15deg);">
             <v-icon icon="mdi-sleep" size="140" color="amber" />
           </div>
 
           <div class="position-relative">
-            <v-icon icon="mdi-sleep" size="48" class="mb-4" color="amber" />
-            <div class="text-h6 mb-3 font-weight-medium">Average Daily Sleep</div>
-            <div v-if="statsStore.loading" class="text-center py-4">
-              <v-progress-circular indeterminate color="amber" size="40" />
+            <v-icon icon="mdi-sleep" :size="$vuetify.display.xs ? 40 : 48" class="mb-3 mb-sm-4" color="amber" />
+            <div class="text-subtitle-1 text-sm-h6 mb-2 mb-sm-3 font-weight-medium">Average Daily Sleep</div>
+            <div v-if="statsStore.loading" class="text-center py-3 py-sm-4">
+              <v-progress-circular indeterminate color="amber" :size="$vuetify.display.xs ? 32 : 40" />
             </div>
-            <div v-else-if="statsStore.error" class="text-center text-error py-4">
+            <div v-else-if="statsStore.error" class="text-center text-error py-3 py-sm-4">
               <v-icon icon="mdi-alert-circle" class="mb-2" />
               <div>{{ statsStore.error }}</div>
             </div>
             <div v-else>
-              <div class="text-h2 font-weight-bold mb-3" style="color: #f59e0b">
+              <div class="text-h4 text-sm-h2 font-weight-bold mb-2 mb-sm-3" style="color: #f59e0b">
                 {{ avgSleep }}
               </div>
-              <div class="text-body-2 text-medium-emphasis mb-2">
+              <div class="text-body-2 text-medium-emphasis mb-1 mb-sm-2">
                 per night
               </div>
               <div class="text-caption text-medium-emphasis">
@@ -217,31 +315,50 @@
 
       <!-- Avg Counts -->
       <v-col cols="12" md="4">
-        <v-card elevation="2" class="pa-6 h-100 position-relative overflow-hidden">
+        <v-card elevation="2" class="pa-4 pa-sm-6 h-100 position-relative overflow-hidden">
           <!-- Background gradient -->
           <div class="position-absolute w-100 h-100" style="top: 0; left: 0; background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(34, 197, 94, 0.1) 100%); border-radius: inherit;"></div>
 
-          <!-- Background decorative icon -->
-          <div class="position-absolute" style="top: -10px; left: -10px; opacity: 0.08; transform: rotate(-10deg);">
+          <!-- Background decorative icon - hidden on mobile -->
+          <div class="position-absolute d-none d-sm-block" style="top: -10px; left: -10px; opacity: 0.08; transform: rotate(-10deg);">
             <v-icon icon="mdi-chart-bar" size="130" color="primary" />
           </div>
 
           <div class="position-relative">
-            <div class="text-center mb-4">
-              <v-icon icon="mdi-chart-bar" size="48" color="primary" />
+            <div class="text-center mb-3 mb-sm-4">
+              <v-icon icon="mdi-chart-bar" :size="$vuetify.display.xs ? 40 : 48" color="primary" />
             </div>
-            <div class="text-h6 mb-4 font-weight-medium text-center">Average Daily Counts</div>
+            <div class="text-subtitle-1 text-sm-h6 mb-3 mb-sm-4 font-weight-medium text-center">Average Daily Counts</div>
 
-            <div v-if="statsStore.loading" class="text-center py-10">
-              <v-progress-circular indeterminate color="primary" size="40" />
+            <div v-if="statsStore.loading" class="text-center py-6 py-sm-10">
+              <v-progress-circular indeterminate color="primary" :size="$vuetify.display.xs ? 32 : 40" />
             </div>
-            <div v-else-if="statsStore.error" class="text-center text-error py-10">
+            <div v-else-if="statsStore.error" class="text-center text-error py-6 py-sm-10">
               <v-icon icon="mdi-alert-circle" class="mb-2" />
               <div>{{ statsStore.error }}</div>
             </div>
-            <div v-else style="height: 200px">
-              <BarChart :chart-data="avgCountsChartData" :chart-options="chartOptions" />
-            </div>
+            <template v-else>
+              <div style="height: 150px" class="d-block d-sm-none">
+                <!-- Mobile: Show simplified data instead of chart -->
+                <div class="d-flex justify-space-around align-center h-100">
+                  <div class="text-center">
+                    <div class="text-h6 font-weight-bold mb-1" style="color: #6366f1;">
+                      {{ avgCountsChartData.datasets[0]?.data[0] || '0' }}
+                    </div>
+                    <div class="text-caption">Diapers</div>
+                  </div>
+                  <div class="text-center">
+                    <div class="text-h6 font-weight-bold mb-1" style="color: #ec4899;">
+                      {{ avgCountsChartData.datasets[0]?.data[1] || '0' }}
+                    </div>
+                    <div class="text-caption">Feeds</div>
+                  </div>
+                </div>
+              </div>
+              <div style="height: 200px" class="d-none d-sm-block">
+                <BarChart :chart-data="avgCountsChartData" :chart-options="chartOptions" />
+              </div>
+            </template>
           </div>
         </v-card>
       </v-col>
@@ -255,16 +372,16 @@
           <div class="position-absolute w-100 h-100" style="top: 0; left: 0; background: linear-gradient(135deg, rgba(245, 158, 11, 0.05) 0%, rgba(236, 72, 153, 0.05) 100%); border-radius: inherit;"></div>
 
           <div class="position-relative">
-            <v-card-title class="text-h6 pb-3">Weekly Sleep Trend</v-card-title>
-            <v-card-text>
-              <div v-if="statsStore.loading" class="text-center py-10">
-                <v-progress-circular indeterminate color="primary" />
+            <v-card-title class="text-subtitle-1 text-sm-h6 pb-2 pb-sm-3">Weekly Sleep Trend</v-card-title>
+            <v-card-text class="pa-3 pa-sm-4">
+              <div v-if="statsStore.loading" class="text-center py-6 py-sm-10">
+                <v-progress-circular indeterminate color="primary" :size="$vuetify.display.xs ? 32 : 40" />
               </div>
-              <div v-else-if="statsStore.error" class="text-center text-error py-10">
+              <div v-else-if="statsStore.error" class="text-center text-error py-6 py-sm-10">
                 {{ statsStore.error }}
               </div>
-              <div v-else style="height: 300px">
-                <LineChart :chart-data="weeklySleepTrendData" :chart-options="chartOptions" />
+              <div v-else :style="{ height: $vuetify.display.xs ? '250px' : '300px' }">
+                <LineChart :chart-data="weeklySleepTrendData" :chart-options="mobileChartOptions" />
               </div>
             </v-card-text>
           </div>
@@ -275,17 +392,75 @@
 </template>
 
 <script setup>
-import { computed, onMounted } from "vue";
+import { computed, onMounted, ref } from "vue";
 import { useStatsStore } from "@/stores/stats";
 import { formatTimeAgo } from "@/utils/datetime";
+import { format as formatDate, isToday } from "date-fns";
+import { useDisplay } from "vuetify";
 import BarChart from "@/components/charts/BarChart.vue";
 import LineChart from "@/components/charts/LineChart.vue";
 
 const statsStore = useStatsStore();
+const { xs } = useDisplay();
+
+// Date picker state
+const datePickerMenu = ref(false);
+const selectedDate = ref(null);
+const today = new Date().toISOString().split('T')[0]; // Format for v-date-picker
 
 // Fetch stats on mount
 onMounted(() => {
-  statsStore.fetchStats();
+  statsStore.fetchInitialStats();
+});
+
+// Date picker methods
+const minDate = computed(() => {
+  // Use baby's birth date if available
+  if (statsStore.babyBirthDate) {
+    return statsStore.babyBirthDate;
+  }
+
+  // Fallback: limit to 1 year ago if nothing else is available
+  const oneYearAgo = new Date();
+  oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
+  return oneYearAgo.toISOString().split('T')[0];
+});
+
+const onDateSelected = (date) => {
+  if (date) {
+    selectedDate.value = date;
+    statsStore.setDailyDate(new Date(date));
+    datePickerMenu.value = false;
+  }
+};
+
+const jumpToToday = () => {
+  statsStore.setDailyDate(new Date());
+};
+
+const dailySummaryTitle = computed(() => {
+  return isToday(statsStore.dailyDate) ? "Today's Summary" : "Day Summary";
+});
+
+const formattedDailyDate = computed(() => {
+  return formatDate(statsStore.dailyDate, "MMM d, yyyy");
+});
+
+// Dynamic text helpers
+const feedsLabel = computed(() => {
+  return isToday(statsStore.dailyDate) ? "Feeds today" : "Feeds this day";
+});
+
+const pumpingLabel = computed(() => {
+  return isToday(statsStore.dailyDate) ? "Pumping today" : "Pumping this day";
+});
+
+const diapersLabel = computed(() => {
+  return isToday(statsStore.dailyDate) ? "Diapers today" : "Diapers this day";
+});
+
+const sleepLabel = computed(() => {
+  return isToday(statsStore.dailyDate) ? "Sleep today" : "Sleep this day";
 });
 
 // --- Chart Data -------------------------------------------------------
@@ -361,6 +536,50 @@ const chartOptions = {
     },
   },
 };
+
+// Mobile-optimized chart options with smaller text and better touch targets
+const mobileChartOptions = computed(() => ({
+  responsive: true,
+  maintainAspectRatio: false,
+  plugins: {
+    legend: {
+      display: false,
+    },
+  },
+  scales: {
+    y: {
+      beginAtZero: true,
+      grid: {
+        color: "rgba(255, 255, 255, 0.1)",
+      },
+      ticks: {
+        font: {
+          size: xs.value ? 10 : 12,
+        },
+      },
+    },
+    x: {
+      grid: {
+        display: false,
+      },
+      ticks: {
+        font: {
+          size: xs.value ? 10 : 12,
+        },
+        maxRotation: xs.value ? 45 : 0,
+      },
+    },
+  },
+  elements: {
+    point: {
+      radius: xs.value ? 3 : 4,
+      hoverRadius: xs.value ? 5 : 6,
+    },
+    line: {
+      borderWidth: xs.value ? 2 : 3,
+    },
+  },
+}));
 
 // --- Computed helpers -------------------------------------------------
 
