@@ -110,9 +110,11 @@
         </div>
       </v-col>
     </v-row>
+
+    <!-- Daily Totals Section -->
     <v-row class="mb-4">
       <!-- Feeds today -->
-      <v-col cols="6" sm="6" md="4" lg="3">
+      <v-col cols="6" sm="6" md="3">
         <v-card elevation="2" class="pa-4 pa-sm-5 text-center h-100 position-relative overflow-hidden">
           <!-- Background gradient -->
           <div class="position-absolute w-100 h-100" style="top: 0; left: 0; background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(147, 51, 234, 0.1) 100%); border-radius: inherit;"></div>
@@ -133,7 +135,7 @@
       </v-col>
 
       <!-- Pumping today -->
-      <v-col cols="6" sm="6" md="4" lg="3">
+      <v-col cols="6" sm="6" md="3">
         <v-card elevation="2" class="pa-4 pa-sm-5 text-center h-100 position-relative overflow-hidden">
           <!-- Background gradient -->
           <div class="position-absolute w-100 h-100" style="top: 0; left: 0; background: linear-gradient(135deg, rgba(34, 197, 94, 0.1) 0%, rgba(59, 130, 246, 0.1) 100%); border-radius: inherit;"></div>
@@ -154,7 +156,7 @@
       </v-col>
 
       <!-- Diapers today -->
-      <v-col cols="6" sm="6" md="4" lg="3">
+      <v-col cols="6" sm="6" md="3">
         <v-card elevation="2" class="pa-4 pa-sm-5 text-center h-100 position-relative overflow-hidden">
           <!-- Background gradient -->
           <div class="position-absolute w-100 h-100" style="top: 0; left: 0; background: linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, rgba(236, 72, 153, 0.1) 100%); border-radius: inherit;"></div>
@@ -180,7 +182,7 @@
       </v-col>
 
       <!-- Sleep today -->
-      <v-col cols="6" sm="6" md="4" lg="3">
+      <v-col cols="6" sm="6" md="3">
         <v-card elevation="2" class="pa-4 pa-sm-5 text-center h-100 position-relative overflow-hidden">
           <!-- Background gradient -->
           <div class="position-absolute w-100 h-100" style="top: 0; left: 0; background: linear-gradient(135deg, rgba(168, 85, 247, 0.1) 0%, rgba(236, 72, 153, 0.1) 100%); border-radius: inherit;"></div>
@@ -198,42 +200,94 @@
           </div>
         </v-card>
       </v-col>
+    </v-row>
 
-      <!-- Currently sleeping -->
-      <v-col cols="6" sm="6" md="4" lg="3">
-        <v-card elevation="2" class="pa-4 pa-sm-5 text-center h-100 position-relative overflow-hidden">
-          <!-- Background gradient -->
-          <div class="position-absolute w-100 h-100" style="top: 0; left: 0; background: linear-gradient(135deg, rgba(245, 158, 11, 0.1) 0%, rgba(168, 85, 247, 0.1) 100%); border-radius: inherit;"></div>
+    <!-- Recent Activity Section -->
+    <v-row class="mb-4">
+      <v-col cols="12">
+        <h2 class="text-h5 mb-3 mb-sm-4 d-flex align-center">
+          <v-icon icon="mdi-clock-outline" size="20" class="mr-2" color="primary"></v-icon>
+          Recent Activity
+        </h2>
+      </v-col>
+    </v-row>
+    <v-row class="mb-4">
+      <!-- Currently sleeping / Last sleep -->
+      <v-col cols="12" sm="6">
+        <v-card
+          elevation="1"
+          class="pa-4 pa-sm-5 h-100 position-relative overflow-hidden"
+          :class="{ 'border-thin': true }"
+          style="border-color: rgba(var(--v-theme-primary), 0.2);"
+        >
+          <!-- Subtle background pattern -->
+          <div class="position-absolute w-100 h-100" style="top: 0; left: 0; background: linear-gradient(135deg, rgba(245, 158, 11, 0.06) 0%, rgba(168, 85, 247, 0.06) 100%); border-radius: inherit;"></div>
 
-          <div class="position-relative">
-            <v-icon icon="mdi-sleep" :size="$vuetify.display.xs ? 32 : 40" class="mb-2 mb-sm-3" color="accent1" />
-            <div class="text-body-2 text-sm-subtitle-1 mb-1 mb-sm-2">{{ sleepingTitle }}</div>
-            <div class="text-h6 text-sm-h5 font-weight-bold mb-1 mb-sm-2">
-              <span v-if="statsStore.loading">…</span>
-              <span v-else>{{ sleepingDisplay }}</span>
+          <div class="position-relative d-flex align-center">
+            <!-- Status indicator -->
+            <div class="mr-4">
+              <div class="position-relative">
+                <v-icon
+                  icon="mdi-sleep"
+                  :size="$vuetify.display.xs ? 40 : 48"
+                  :color="statsStore.recent?.currently_sleeping ? 'success' : 'amber'"
+                />
+                <v-badge
+                  v-if="statsStore.recent?.currently_sleeping"
+                  dot
+                  color="success"
+                  class="position-absolute"
+                  style="top: -2px; right: -2px;"
+                ></v-badge>
+              </div>
             </div>
-            <div v-if="lastSleepDurationDisplay" class="text-caption text-medium-emphasis">
-              {{ lastSleepDurationDisplay }}
+
+            <!-- Content -->
+            <div class="flex-grow-1">
+              <div class="text-subtitle-1 text-sm-h6 mb-1 font-weight-medium">{{ sleepingTitle }}</div>
+              <div class="text-h6 text-sm-h5 font-weight-bold mb-1" :class="statsStore.recent?.currently_sleeping ? 'text-success' : ''">
+                <span v-if="statsStore.loading">…</span>
+                <span v-else>{{ sleepingDisplay }}</span>
+              </div>
+              <div v-if="lastSleepDurationDisplay" class="text-caption text-medium-emphasis">
+                Duration: {{ lastSleepDurationDisplay }}
+              </div>
+              <div v-else-if="statsStore.recent?.currently_sleeping" class="text-caption text-success">
+                <v-icon icon="mdi-circle" size="8" class="mr-1"></v-icon>
+                Sleep in progress
+              </div>
             </div>
           </div>
         </v-card>
       </v-col>
 
       <!-- Last Feed -->
-      <v-col cols="6" sm="6" md="4" lg="3">
-        <v-card elevation="2" class="pa-4 pa-sm-5 text-center h-100 position-relative overflow-hidden">
-          <!-- Background gradient -->
-          <div class="position-absolute w-100 h-100" style="top: 0; left: 0; background: linear-gradient(135deg, rgba(34, 197, 94, 0.1) 0%, rgba(245, 158, 11, 0.1) 100%); border-radius: inherit;"></div>
+      <v-col cols="12" sm="6">
+        <v-card
+          elevation="1"
+          class="pa-4 pa-sm-5 h-100 position-relative overflow-hidden"
+          :class="{ 'border-thin': true }"
+          style="border-color: rgba(var(--v-theme-primary), 0.2);"
+        >
+          <!-- Subtle background pattern -->
+          <div class="position-absolute w-100 h-100" style="top: 0; left: 0; background: linear-gradient(135deg, rgba(34, 197, 94, 0.06) 0%, rgba(245, 158, 11, 0.06) 100%); border-radius: inherit;"></div>
 
-          <div class="position-relative">
-            <v-icon icon="mdi-baby-bottle" :size="$vuetify.display.xs ? 32 : 40" class="mb-2 mb-sm-3" color="accent1" />
-            <div class="text-body-2 text-sm-subtitle-1 mb-1 mb-sm-2">Last fed</div>
-            <div class="text-h6 text-sm-h5 font-weight-bold mb-1 mb-sm-2">
-              <span v-if="statsStore.loading">…</span>
-              <span v-else>{{ lastFedDisplay }}</span>
+          <div class="position-relative d-flex align-center">
+            <!-- Icon -->
+            <div class="mr-4">
+              <v-icon icon="mdi-baby-bottle" :size="$vuetify.display.xs ? 40 : 48" color="accent1" />
             </div>
-            <div v-if="lastFeedAmount" class="text-caption text-medium-emphasis">
-              {{ lastFeedAmount }}
+
+            <!-- Content -->
+            <div class="flex-grow-1">
+              <div class="text-subtitle-1 text-sm-h6 mb-1 font-weight-medium">Last fed</div>
+              <div class="text-h6 text-sm-h5 font-weight-bold mb-1">
+                <span v-if="statsStore.loading">…</span>
+                <span v-else>{{ lastFedDisplay }}</span>
+              </div>
+              <div v-if="lastFeedAmount" class="text-caption text-medium-emphasis">
+                Amount: {{ lastFeedAmount }}
+              </div>
             </div>
           </div>
         </v-card>
