@@ -283,12 +283,12 @@ func GetWeeklyStats(c echo.Context) error {
 	db := c.Get("db").(*gorm.DB)
 	userID := c.Get("user_id").(string)
 
-	// Parse date parameter to determine the week
-	// Support both 'date' and 'week' parameters
+	// Parse date and timezone parameters
 	dateStr := c.QueryParam("date")
 	if dateStr == "" {
 		dateStr = c.QueryParam("week")
 	}
+	tzOffsetMinutesStr := c.QueryParam("tz_offset")
 	var targetDate time.Time
 	var err error
 
@@ -301,14 +301,24 @@ func GetWeeklyStats(c echo.Context) error {
 		targetDate = time.Now().UTC()
 	}
 
-	// Determine the start of the week (Sunday) for the targetDate
-	weekday := targetDate.Weekday()
-	// Adjust weekday to be Sunday-based (Sunday=0, Monday=1, ..., Saturday=6)
-	offset := int(weekday)
-	startDate := targetDate.AddDate(0, 0, -offset)
-	startDate = time.Date(startDate.Year(), startDate.Month(), startDate.Day(), 0, 0, 0, 0, time.UTC)
+	// Adjust for client's timezone offset
+	// The offset from JS's getTimezoneOffset() is inverted compared to Go's FixedZone.
+	// JS: Positive for timezones behind UTC. Go: Positive for timezones ahead of UTC.
+	var location *time.Location = time.UTC
+	if tzOffsetMinutesStr != "" {
+		tzOffsetMinutes, err := strconv.Atoi(tzOffsetMinutesStr)
+		if err == nil {
+			location = time.FixedZone("user_tz", -tzOffsetMinutes*60) // seconds
+		}
+	}
 
-	endDate := startDate.AddDate(0, 0, 7)
+	// Use "past 7 days" instead of calendar week for more realistic data
+	// End date is the target date + 1 day (to include the target date)
+	year, month, day := targetDate.Date()
+	endDate := time.Date(year, month, day, 0, 0, 0, 0, location).AddDate(0, 0, 1)
+
+	// Start date is 7 days before the end date
+	startDate := endDate.AddDate(0, 0, -7)
 
 	// Get user's baby
 	baby, err := getUserBaby(db, userID)
@@ -321,19 +331,19 @@ func GetWeeklyStats(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, "Cannot query dates before baby's birth date")
 	}
 
-	// Get activities for the week
+	// Get activities for the past 7 days, querying in UTC
 	var activities []models.Activity
 	err = db.Preload("FeedActivity").
 		Preload("DiaperActivity").
 		Preload("SleepActivity").
 		Preload("PumpActivity").
-		Where("baby_id = ? AND start_time >= ? AND start_time < ?", baby.ID, startDate, endDate).
+		Where("baby_id = ? AND start_time >= ? AND start_time < ?", baby.ID, startDate.UTC(), endDate.UTC()).
 		Find(&activities).Error
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, "Failed to fetch activities")
 	}
 
-	// Calculate daily totals
+	// Calculate daily totals with proper timezone handling
 	dailyCounts := make(map[string][]int)
 	dailyTotals := make(map[string][]float64)
 
@@ -349,7 +359,10 @@ func GetWeeklyStats(c echo.Context) error {
 	dailyTotals["pump_amount_ml"] = make([]float64, 7)
 
 	for _, activity := range activities {
-		dayIndex := int(activity.StartTime.Sub(startDate).Hours() / 24)
+		// Convert activity time to user's timezone for proper day calculation
+		activityTime := activity.StartTime.In(location)
+		dayIndex := int(activityTime.Sub(startDate).Hours() / 24)
+
 		if dayIndex >= 0 && dayIndex < 7 {
 			activityType := string(activity.Type)
 			// Only count activity types that we're tracking in daily stats
@@ -414,17 +427,17 @@ func GetWeeklyStats(c echo.Context) error {
 		}
 	}
 
-	// Get growth measurements for the week
+	// Get growth measurements for the past 7 days
 	var growthInfo *WeeklyGrowthInfo
 	var firstGrowth, lastGrowth models.Activity
 
 	err1 := db.Preload("GrowthMeasurement").
-		Where("baby_id = ? AND type = ? AND start_time >= ? AND start_time < ?", baby.ID, models.ActivityTypeGrowth, startDate, endDate).
+		Where("baby_id = ? AND type = ? AND start_time >= ? AND start_time < ?", baby.ID, models.ActivityTypeGrowth, startDate.UTC(), endDate.UTC()).
 		Order("start_time ASC").
 		First(&firstGrowth).Error
 
 	err2 := db.Preload("GrowthMeasurement").
-		Where("baby_id = ? AND type = ? AND start_time >= ? AND start_time < ?", baby.ID, models.ActivityTypeGrowth, startDate, endDate).
+		Where("baby_id = ? AND type = ? AND start_time >= ? AND start_time < ?", baby.ID, models.ActivityTypeGrowth, startDate.UTC(), endDate.UTC()).
 		Order("start_time DESC").
 		First(&lastGrowth).Error
 

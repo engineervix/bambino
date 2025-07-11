@@ -240,10 +240,10 @@
       </v-col>
     </v-row>
 
-    <!-- Weekly Averages -->
+    <!-- Past 7 Days Averages -->
     <v-row class="mt-4 mt-sm-6">
       <v-col cols="12">
-        <h2 class="text-h5 mb-3 mb-sm-4">Weekly Trends</h2>
+        <h2 class="text-h5 mb-3 mb-sm-4">Past 7 Days</h2>
       </v-col>
     </v-row>
     <v-row class="mb-4">
@@ -260,7 +260,7 @@
 
           <div class="position-relative">
             <v-icon icon="mdi-calendar-week" :size="$vuetify.display.xs ? 40 : 48" class="mb-3 mb-sm-4" color="accent2" />
-            <div class="text-subtitle-1 text-sm-h6 mb-2 mb-sm-3 font-weight-medium">Activities this week</div>
+            <div class="text-subtitle-1 text-sm-h6 mb-2 mb-sm-3 font-weight-medium">Activities (past 7 days)</div>
             <div class="text-h4 text-sm-h3 font-weight-bold mb-2 mb-sm-3" style="color: #ec4899;">
               <span v-if="statsStore.loading">…</span>
               <span v-else>{{ activitiesWeek }}</span>
@@ -306,7 +306,7 @@
               </div>
               <div class="text-caption text-medium-emphasis">
                 <v-icon icon="mdi-moon-waning-crescent" size="16" class="mr-1" />
-                Based on this week's data
+                Based on past 7 days of data
               </div>
             </div>
           </div>
@@ -364,7 +364,7 @@
       </v-col>
     </v-row>
 
-    <!-- Weekly Sleep Trend Chart -->
+    <!-- Past 7 Days Sleep Trend Chart -->
     <v-row class="mb-4">
       <v-col cols="12">
         <v-card elevation="2" class="position-relative overflow-hidden">
@@ -372,7 +372,7 @@
           <div class="position-absolute w-100 h-100" style="top: 0; left: 0; background: linear-gradient(135deg, rgba(245, 158, 11, 0.05) 0%, rgba(236, 72, 153, 0.05) 100%); border-radius: inherit;"></div>
 
           <div class="position-relative">
-            <v-card-title class="text-subtitle-1 text-sm-h6 pb-2 pb-sm-3">Weekly Sleep Trend</v-card-title>
+            <v-card-title class="text-subtitle-1 text-sm-h6 pb-2 pb-sm-3">Sleep Trend (Past 7 Days)</v-card-title>
             <v-card-text class="pa-3 pa-sm-4">
               <div v-if="statsStore.loading" class="text-center py-6 py-sm-10">
                 <v-progress-circular indeterminate color="primary" :size="$vuetify.display.xs ? 32 : 40" />

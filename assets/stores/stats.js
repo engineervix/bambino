@@ -46,7 +46,7 @@ export const useStatsStore = defineStore("stats", {
         // Fetch daily and weekly stats for the new date
         const [dailyRes, weeklyRes] = await Promise.all([
           apiClient.get(`/stats/daily?date=${dateStr}&tz_offset=${timezoneOffset}`),
-          apiClient.get(`/stats/weekly?date=${dateStr}`),
+          apiClient.get(`/stats/weekly?date=${dateStr}&tz_offset=${timezoneOffset}`),
         ]);
 
         this.daily = dailyRes.data;
@@ -64,7 +64,7 @@ export const useStatsStore = defineStore("stats", {
             const todayOffset = new Date().getTimezoneOffset();
             const [dailyRes, weeklyRes] = await Promise.all([
               apiClient.get(`/stats/daily?date=${todayStr}&tz_offset=${todayOffset}`),
-              apiClient.get(`/stats/weekly?date=${todayStr}`),
+              apiClient.get(`/stats/weekly?date=${todayStr}&tz_offset=${todayOffset}`),
             ]);
             this.daily = dailyRes.data;
             this.weekly = weeklyRes.data;
@@ -90,7 +90,7 @@ export const useStatsStore = defineStore("stats", {
         const [recentRes, dailyRes, weeklyRes] = await Promise.all([
           apiClient.get("/stats/recent"),
           apiClient.get(`/stats/daily?date=${dateStr}&tz_offset=${timezoneOffset}`),
-          apiClient.get(`/stats/weekly?date=${dateStr}`),
+          apiClient.get(`/stats/weekly?date=${dateStr}&tz_offset=${timezoneOffset}`),
         ]);
 
         this.recent = recentRes.data;

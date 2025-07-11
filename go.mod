@@ -3,6 +3,8 @@ module github.com/engineervix/bambino
 go 1.23.4
 
 require (
+	github.com/getsentry/sentry-go v0.34.1
+	github.com/getsentry/sentry-go/echo v0.34.1
 	github.com/go-playground/validator/v10 v10.27.0
 	github.com/golang-migrate/migrate/v4 v4.18.3
 	github.com/google/uuid v1.6.0
@@ -22,8 +24,6 @@ require (
 require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/gabriel-vasile/mimetype v1.4.8 // indirect
-	github.com/getsentry/sentry-go v0.34.1 // indirect
-	github.com/getsentry/sentry-go/echo v0.34.1 // indirect
 	github.com/go-playground/locales v0.14.1 // indirect
 	github.com/go-playground/universal-translator v0.18.1 // indirect
 	github.com/gorilla/context v1.1.2 // indirect

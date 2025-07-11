@@ -270,14 +270,14 @@ func TestGetWeeklyStats(t *testing.T) {
 	ctx := setupTestContext(t)
 	defer ctx.Cleanup()
 
-	// Get start of current week (Sunday)
+	// Use a rolling 7-day window ending on "today"
 	now := time.Now()
-	// Calculate start of week using Sunday as the first day (Sunday=0, Monday=1, ..., Saturday=6)
-	offset := int(now.Weekday())
-	startOfWeek := now.AddDate(0, 0, -offset)
-	startOfWeek = time.Date(startOfWeek.Year(), startOfWeek.Month(), startOfWeek.Day(), 0, 0, 0, 0, startOfWeek.Location())
+	// End date is "today" + 1 day (to include today)
+	endDate := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location()).AddDate(0, 0, 1)
+	// Start date is 7 days before the end date
+	startDate := endDate.AddDate(0, 0, -7)
 
-	// Create activities spread throughout the week
+	// Create activities spread throughout the 7-day period
 	activities := []*models.Activity{}
 
 	// Day 1: 3 feeds, 2 diapers, 1 sleep
@@ -285,25 +285,25 @@ func TestGetWeeklyStats(t *testing.T) {
 		activities = append(activities, &models.Activity{
 			BabyID:    ctx.Baby.ID,
 			Type:      models.ActivityTypeFeed,
-			StartTime: startOfWeek.Add(time.Duration(i*4) * time.Hour),
+			StartTime: startDate.Add(time.Duration(i*4) * time.Hour),
 		})
 	}
 	for i := 0; i < 2; i++ {
 		activities = append(activities, &models.Activity{
 			BabyID:    ctx.Baby.ID,
 			Type:      models.ActivityTypeDiaper,
-			StartTime: startOfWeek.Add(time.Duration(i*6) * time.Hour),
+			StartTime: startDate.Add(time.Duration(i*6) * time.Hour),
 		})
 	}
 	activities = append(activities, &models.Activity{
 		BabyID:    ctx.Baby.ID,
 		Type:      models.ActivityTypeSleep,
-		StartTime: startOfWeek.Add(2 * time.Hour),
-		EndTime:   timePtr(startOfWeek.Add(4 * time.Hour)), // 2 hour sleep
+		StartTime: startDate.Add(2 * time.Hour),
+		EndTime:   timePtr(startDate.Add(4 * time.Hour)), // 2 hour sleep
 	})
 
 	// Day 2: 2 feeds, 3 diapers
-	day2 := startOfWeek.AddDate(0, 0, 1)
+	day2 := startDate.AddDate(0, 0, 1)
 	for i := 0; i < 2; i++ {
 		activities = append(activities, &models.Activity{
 			BabyID:    ctx.Baby.ID,
@@ -319,16 +319,16 @@ func TestGetWeeklyStats(t *testing.T) {
 		})
 	}
 
-	// Growth measurements (start and end of week)
+	// Growth measurements (start and end of 7-day period)
 	startGrowth := &models.Activity{
 		BabyID:    ctx.Baby.ID,
 		Type:      models.ActivityTypeGrowth,
-		StartTime: startOfWeek,
+		StartTime: startDate,
 	}
 	endGrowth := &models.Activity{
 		BabyID:    ctx.Baby.ID,
 		Type:      models.ActivityTypeGrowth,
-		StartTime: startOfWeek.AddDate(0, 0, 6),
+		StartTime: startDate.AddDate(0, 0, 6),
 	}
 	activities = append(activities, startGrowth, endGrowth)
 
@@ -376,7 +376,7 @@ func TestGetWeeklyStats(t *testing.T) {
 	err = ctx.DB.Create(endGrowthData).Error
 	require.NoError(t, err)
 
-	t.Run("get weekly stats for current week", func(t *testing.T) {
+	t.Run("get weekly stats for current 7-day period", func(t *testing.T) {
 		c, rec := createEchoContext(ctx, "GET", "/api/stats/weekly", nil)
 
 		err := GetWeeklyStats(c)
@@ -387,9 +387,9 @@ func TestGetWeeklyStats(t *testing.T) {
 		err = json.Unmarshal(rec.Body.Bytes(), &response)
 		require.NoError(t, err)
 
-		// Check dates
-		assert.Equal(t, startOfWeek.Format("2006-01-02"), response.StartDate)
-		assert.Equal(t, startOfWeek.AddDate(0, 0, 7).Format("2006-01-02"), response.EndDate)
+		// Check dates - should be rolling 7-day window
+		assert.Equal(t, startDate.Format("2006-01-02"), response.StartDate)
+		assert.Equal(t, endDate.Format("2006-01-02"), response.EndDate)
 
 		// Check averages
 		assert.InDelta(t, 5.0/7.0, response.DailyAverages["feed_per_day"], 0.01)   // 5 feeds / 7 days
@@ -402,8 +402,8 @@ func TestGetWeeklyStats(t *testing.T) {
 		assert.InDelta(t, 0.5, *response.GrowthThisWeek.HeightChangeCM, 0.01) // 60.5 - 60.0
 	})
 
-	t.Run("get weekly stats for specific week", func(t *testing.T) {
-		lastWeek := startOfWeek.AddDate(0, 0, -7)
+	t.Run("get weekly stats for specific 7-day period", func(t *testing.T) {
+		lastWeek := startDate.AddDate(0, 0, -7)
 		c, rec := createEchoContext(ctx, "GET", "/api/stats/weekly?week="+lastWeek.Format("2006-01-02"), nil)
 
 		err := GetWeeklyStats(c)
@@ -414,7 +414,7 @@ func TestGetWeeklyStats(t *testing.T) {
 		err = json.Unmarshal(rec.Body.Bytes(), &response)
 		require.NoError(t, err)
 
-		// Should have no activities for last week
+		// Should have no activities for last 7-day period
 		assert.Equal(t, 0.0, response.DailyAverages["feed_per_day"])
 		assert.Equal(t, 0.0, response.DailyAverages["diaper_per_day"])
 		assert.Nil(t, response.GrowthThisWeek)
