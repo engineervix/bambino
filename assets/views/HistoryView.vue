@@ -391,7 +391,16 @@ function getActivityTypeConfig(type) {
 
 function isTimerActivity(activity) {
   const config = getActivityTypeConfig(activity.type);
-  return config?.hasTimer || false;
+  if (!config?.hasTimer) {
+    return false;
+  }
+
+  // For feeds, only breast feeding is a timer activity. Bottle feeds are not.
+  if (activity.type === "feed") {
+    return activity.source === "left" || activity.source === "right";
+  }
+
+  return true;
 }
 
 function applyDatePreset(preset) {

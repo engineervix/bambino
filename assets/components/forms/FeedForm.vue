@@ -7,6 +7,7 @@
       color="primary"
       density="comfortable"
       class="w-100 mb-4 d-flex"
+      :disabled="isTimerRunning"
     >
       <v-btn value="bottle" class="flex-grow-1">
         <v-icon start>mdi-bottle-baby</v-icon>
@@ -35,6 +36,7 @@
               variant="outlined"
               density="compact"
               :rules="[rules.required]"
+              :disabled="isTimerRunning"
             />
           </v-col>
           <v-col cols="6">
@@ -45,6 +47,7 @@
               variant="outlined"
               density="compact"
               :rules="[rules.required]"
+              :disabled="isTimerRunning"
             />
           </v-col>
         </v-row>
@@ -123,8 +126,8 @@
         type="submit"
         color="primary"
         :loading="loading"
-        :disabled="loading"
-        :block="editMode || !hasTimer"
+        :disabled="loading || isTimerRunning"
+        :block="editMode || !feedSupportsTimer"
         class="flex-grow-1"
       >
         {{ editMode ? "Update Feed" : "Save" }}
@@ -132,7 +135,7 @@
 
       <!-- This button starts the timer, shown only for new entries -->
       <v-btn
-        v-if="!useTimer && !editMode && hasTimer"
+        v-if="!useTimer && !editMode && feedSupportsTimer"
         variant="outlined"
         color="primary"
         @click="startTimer"
@@ -189,6 +192,18 @@ const { error: formError, loading, handleError, clearError: clearFormError, with
 const form = ref(null);
 const useTimer = ref(false);
 const timerInterval = ref(null);
+
+// Determine if the current feed type supports a timer
+const feedSupportsTimer = computed(() => {
+  if (!props.hasTimer) return false;
+  return formData.value.feed_type === "breast_left" || formData.value.feed_type === "breast_right";
+});
+
+const isTimerRunning = computed(() => {
+  if (!props.editMode || !props.activity) return false;
+  // A running activity has no end_time.
+  return feedSupportsTimer.value && !props.activity.end_time;
+});
 
 // Initialize form data from props or defaults
 const initializeFormData = () => {
