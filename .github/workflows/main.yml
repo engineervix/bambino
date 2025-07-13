@@ -156,10 +156,12 @@ jobs:
           TODAY="($(TZ=Africa/Lusaka date --iso))"
           echo "release_name=${{ github.ref_name }} $TODAY" >> $GITHUB_OUTPUT
 
-      - name: Download all artifacts
+      - name: Download binary artifacts
         uses: actions/download-artifact@v4
         with:
+          pattern: bambino-*
           path: artifacts
+          merge-multiple: true
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
