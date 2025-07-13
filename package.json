@@ -46,6 +46,7 @@
     "globals": "^16.3.0",
     "jsdom": "^26.1.0",
     "prettier": "^3.6.2",
+    "semver": "^7.7.2",
     "vite": "^7.0.2",
     "vite-plugin-vue-devtools": "^7.7.7",
     "vite-plugin-vuetify": "^2.1.1",
@@ -63,6 +64,14 @@
     "parserPreset": "conventional-changelog-atom"
   },
   "commit-and-tag-version": {
+    "bumpFiles": [
+      "package.json",
+      "package-lock.json",
+      {
+        "filename": "cmd/serve.go",
+        "updater": "./scripts/go-version-updater.cjs"
+      }
+    ],
     "header": "# Changelog\n\nAll notable changes to this project will be documented here.\n\nThe format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project attempts to adhere to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).\n",
     "types": [
       {
