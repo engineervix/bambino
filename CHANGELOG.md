@@ -4,6 +4,38 @@ All notable changes to this project will be documented here.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project attempts to adhere to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v1.1.0](https://github.com/engineervix/bambino/compare/v1.0.0...v1.1.0) (2025-07-13)
+
+
+### 🚀 Features
+
+* enhance baby age display with multi-unit precision ([6b8ee0a](https://github.com/engineervix/bambino/commit/6b8ee0a5369cd35570e9f2297d7edf424234c36b))
+* error tracking with sentry ([ce42c93](https://github.com/engineervix/bambino/commit/ce42c937b3e5edc239422dda5ef6ae7873ab2de0)), closes [#3](https://github.com/engineervix/bambino/issues/3)
+* improve weekly trends with rolling 7-day window and timezone fixes ([50d50fb](https://github.com/engineervix/bambino/commit/50d50fb49087596bfee78a4d8642bbe9089f3cb1))
+
+
+### 🐛 Bug Fixes
+
+* calculation of day stats ([45f9b19](https://github.com/engineervix/bambino/commit/45f9b19148e412d081fb7a5939ad485417cf3724))
+* correct IP address detection, for real this time! ([7457e1e](https://github.com/engineervix/bambino/commit/7457e1e60cb50f3e45b0866993d33296261194d2)), closes [#11](https://github.com/engineervix/bambino/issues/11)
+* display user-friendly sleep location labels in activity history ([3b84cfd](https://github.com/engineervix/bambino/commit/3b84cfd3e8ed898d9b0f29411b9a38374d656579))
+* ensure we corectly show latest stats ([5cb9f8a](https://github.com/engineervix/bambino/commit/5cb9f8afa3c5d07da0d0e0e25bf6a8f544620b8f))
+* extract real client IP behind Traefik proxy ([adb1864](https://github.com/engineervix/bambino/commit/adb18643e695ff48c03b9474e91d45ea9cb4e4f7)), closes [#11](https://github.com/engineervix/bambino/issues/11)
+* more realistic depiction of sleep data in sleep card ([1188e6a](https://github.com/engineervix/bambino/commit/1188e6a400b3f4b8926222c953b345bd7291451c))
+* timer logic for bottle fed activities ([a475824](https://github.com/engineervix/bambino/commit/a475824544e2fc5d76bc686fa0a7a9e2b573a51a)), closes [#14](https://github.com/engineervix/bambino/issues/14)
+* today should be today ([cc1ac80](https://github.com/engineervix/bambino/commit/cc1ac8086c4deb08eb64c578a9a0892c6ae1d79b))
+* use X-Real-IP header for client IP address ([7d99834](https://github.com/engineervix/bambino/commit/7d99834fc816a8f1090de491b4e649189801cdde)), closes [#11](https://github.com/engineervix/bambino/issues/11)
+
+
+### ♻️ Code Refactoring
+
+* better stats ([6f6e496](https://github.com/engineervix/bambino/commit/6f6e49648714cdbe2fc8150a0c54575ad4e9d247)), closes [#8](https://github.com/engineervix/bambino/issues/8)
+* improve stats layout ([f85c081](https://github.com/engineervix/bambino/commit/f85c081707fe4b1df79aaf9071fa7fd82da3a7bc))
+* logging - improved ([b5f8e0d](https://github.com/engineervix/bambino/commit/b5f8e0dbf73a174d3ebccade63f2f819f2b897bb))
+* show growth & health info after it's been entered ([ed5ce39](https://github.com/engineervix/bambino/commit/ed5ce39ef72044b432cbe20582232e016d080d71)), closes [#13](https://github.com/engineervix/bambino/issues/13)
+* **ui:** reorganize daily summary into distinct sections ([c4c81ae](https://github.com/engineervix/bambino/commit/c4c81ae6e1984770243f9a3bb8fa479b977d613d))
+* update day stats ([9c37017](https://github.com/engineervix/bambino/commit/9c37017f657722ea5405d4ac43da31c4ca40e94d))
+
 ## 1.0.0 (2025-07-10)
 
 

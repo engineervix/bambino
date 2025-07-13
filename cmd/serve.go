@@ -227,7 +227,7 @@ func runServer(overridePort string) {
 	e.GET("/", func(c echo.Context) error {
 		return c.JSON(200, map[string]string{
 			"message": "Bambino API",
-			"version": "1.0.0",
+			"version": "1.1.0",
 		})
 	})
 
