@@ -152,6 +152,9 @@ const currentFormComponent = computed(() => {
 
 // Main activities (cards)
 const mainActivities = computed(() => {
+  if (currentBaby.value?.track_sleep === false) {
+    return activityStore.activityTypes.filter((a) => a.id !== "sleep");
+  }
   return activityStore.activityTypes;
 });
 

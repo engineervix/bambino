@@ -47,6 +47,14 @@
                       <v-icon color="primary">mdi-check-circle</v-icon>
                     </template>
                   </v-list-item>
+                  <v-list-item>
+                    <v-switch
+                      v-model="baby.track_sleep"
+                      label="Track Sleep"
+                      color="primary"
+                      @change="updateTrackSleep(baby)"
+                    ></v-switch>
+                  </v-list-item>
                 </v-list>
                 <div v-else class="text-center py-4">
                   <p class="text-grey mb-2">No baby profiles yet</p>
@@ -76,7 +84,7 @@ import { format } from "date-fns";
 
 const authStore = useAuthStore();
 const { username, loading, babies, currentBaby } = storeToRefs(authStore);
-const { logout, selectBaby } = authStore;
+const { logout, selectBaby, updateBaby } = authStore;
 
 async function handleLogout() {
   await logout();
@@ -84,5 +92,9 @@ async function handleLogout() {
 
 function formatDate(dateString) {
   return format(new Date(dateString), "MMM d, yyyy");
+}
+
+async function updateTrackSleep(baby) {
+  await updateBaby(baby.id, { track_sleep: baby.track_sleep });
 }
 </script>

@@ -12,6 +12,7 @@ type Baby struct {
 	UserID      uuid.UUID `gorm:"type:varchar(36);not null;index"`
 	Name        string    `gorm:"type:varchar(100);not null"`
 	BirthDate   time.Time `gorm:"type:date;not null"`
+	TrackSleep  bool      `gorm:"type:boolean;default:true;not null"`
 	BirthWeight *float64  `gorm:"type:decimal(5,2)"`
 	BirthHeight *float64  `gorm:"type:decimal(5,2)"`
 	CreatedAt   time.Time

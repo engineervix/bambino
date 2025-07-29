@@ -157,6 +157,7 @@
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted, watch } from "vue";
+import { useAuthStore } from "@/stores/auth";
 import { useTimerStore } from "@/stores/timer";
 import { useActivityStore } from "@/stores/activity";
 import { useErrorHandling } from "@/composables/useErrorHandling";
@@ -181,8 +182,11 @@ const props = defineProps({
 const emit = defineEmits(["success", "cancel"]);
 
 // Stores
+const authStore = useAuthStore();
 const timerStore = useTimerStore();
 const activityStore = useActivityStore();
+
+const currentBaby = computed(() => authStore.currentBaby);
 
 // Error handling
 const { error: formError, loading, handleError, clearError: clearFormError, withErrorHandling } = useErrorHandling();
@@ -275,6 +279,10 @@ onUnmounted(() => {
 
 // Initialize on mount
 onMounted(() => {
+  if (currentBaby.value && !currentBaby.value.track_sleep) {
+    emit("cancel");
+    return;
+  }
   // Don't show timer in edit mode
   if (props.editMode) {
     useTimer.value = false;

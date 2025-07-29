@@ -198,7 +198,7 @@
       </v-col>
 
       <!-- Sleep today -->
-      <v-col cols="6" sm="6" md="3">
+      <v-col v-if="currentBaby.track_sleep" cols="6" sm="6" md="3">
         <v-card elevation="2" class="pa-4 pa-sm-5 text-center h-100 position-relative overflow-hidden">
           <!-- Background gradient -->
           <div
@@ -237,7 +237,7 @@
     </v-row>
     <v-row class="mb-4">
       <!-- Currently sleeping / Last sleep -->
-      <v-col cols="12" sm="6">
+      <v-col v-if="currentBaby.track_sleep" cols="12" sm="6">
         <v-card
           elevation="1"
           class="pa-4 pa-sm-5 h-100 position-relative overflow-hidden"
@@ -386,7 +386,7 @@
       </v-col>
 
       <!-- Avg Sleep -->
-      <v-col cols="12" sm="6" md="4">
+      <v-col v-if="currentBaby.track_sleep" cols="12" sm="6" md="4">
         <v-card elevation="2" class="pa-4 pa-sm-6 text-center h-100 position-relative overflow-hidden">
           <!-- Background gradient -->
           <div
@@ -496,7 +496,7 @@
     </v-row>
 
     <!-- Past 7 Days Sleep Trend Chart -->
-    <v-row class="mb-4">
+    <v-row v-if="currentBaby.track_sleep" class="mb-4">
       <v-col cols="12">
         <v-card elevation="2" class="position-relative overflow-hidden">
           <!-- Background gradient -->
@@ -532,6 +532,7 @@
 
 <script setup>
 import { computed, onMounted, ref } from "vue";
+import { useAuthStore } from "@/stores/auth";
 import { useStatsStore } from "@/stores/stats";
 import { formatTimeAgo } from "@/utils/datetime";
 import { format as formatDate, isToday } from "date-fns";
@@ -540,7 +541,10 @@ import BarChart from "@/components/charts/BarChart.vue";
 import LineChart from "@/components/charts/LineChart.vue";
 
 const statsStore = useStatsStore();
+const authStore = useAuthStore();
 const { xs } = useDisplay();
+
+const currentBaby = computed(() => authStore.currentBaby);
 
 // Date picker state
 const datePickerMenu = ref(false);

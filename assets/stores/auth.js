@@ -170,6 +170,29 @@ export const useAuthStore = defineStore("auth", () => {
     error.value = null;
   }
 
+  async function updateBaby(babyId, data) {
+    try {
+      const response = await apiClient.put(`/babies/${babyId}`, data);
+      const updatedBaby = response.data;
+
+      // Update the babies array
+      const index = babies.value.findIndex((b) => b.id === babyId);
+      if (index !== -1) {
+        babies.value[index] = updatedBaby;
+      }
+
+      // Update the selected baby if it's the one being updated
+      if (selectedBaby.value?.id === babyId) {
+        selectedBaby.value = updatedBaby;
+      }
+
+      return { success: true, data: updatedBaby };
+    } catch (err) {
+      error.value = err.message;
+      return { success: false, error: err.message };
+    }
+  }
+
   return {
     // State
     user,
@@ -195,5 +218,6 @@ export const useAuthStore = defineStore("auth", () => {
     loadSelectedBaby,
     clearAuthState,
     clearError,
+    updateBaby,
   };
 });
