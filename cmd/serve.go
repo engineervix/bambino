@@ -248,6 +248,7 @@ func runServer(overridePort string) {
 
 	// Baby routes
 	api.GET("/babies", handlers.GetBabies)
+	api.PUT("/babies/:baby_id", handlers.UpdateBaby)
 
 	// Activity routes
 	api.GET("/activities", handlers.GetActivities)
