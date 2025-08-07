@@ -12,36 +12,47 @@ export function combineDateAndTime(dateStr, timeStr) {
 
 /**
  * Gets current date in YYYY-MM-DD format
+ * Uses local timezone to ensure correct date display
  * @returns {string}
  */
 export function getCurrentDate() {
-  return new Date().toISOString().split("T")[0];
+  const now = new Date();
+  return getDateString(now);
 }
 
 /**
  * Gets current time in HH:MM format
+ * Uses local timezone to ensure correct time display
  * @returns {string}
  */
 export function getCurrentTime() {
-  return new Date().toTimeString().slice(0, 5);
+  const now = new Date();
+  return getTimeString(now);
 }
 
 /**
  * Extracts date from Date object in YYYY-MM-DD format
+ * Uses local timezone to avoid timezone conversion issues
  * @param {Date} date
  * @returns {string}
  */
 export function getDateString(date) {
-  return date.toISOString().split("T")[0];
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
 }
 
 /**
  * Extracts time from Date object in HH:MM format
+ * Uses local timezone to avoid timezone conversion issues
  * @param {Date} date
  * @returns {string}
  */
 export function getTimeString(date) {
-  return date.toTimeString().slice(0, 5);
+  const hours = String(date.getHours()).padStart(2, '0');
+  const minutes = String(date.getMinutes()).padStart(2, '0');
+  return `${hours}:${minutes}`;
 }
 
 /**
@@ -102,21 +113,31 @@ export function formatTimeAgo(date) {
 /**
  * Gets current date and time in a format suitable for datetime-local input.
  * YYYY-MM-DDTHH:mm
+ * Uses local timezone to ensure correct datetime display
  * @returns {string}
  */
 export function getCurrentDateTimeLocal() {
   const now = new Date();
-  now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
-  return now.toISOString().slice(0, 16);
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
+  const hours = String(now.getHours()).padStart(2, '0');
+  const minutes = String(now.getMinutes()).padStart(2, '0');
+  return `${year}-${month}-${day}T${hours}:${minutes}`;
 }
 
 /**
  * Formats a Date object into a string for datetime-local input.
+ * Uses local timezone to avoid timezone conversion issues
  * @param {Date} date
  * @returns {string}
  */
 export function formatDateTimeLocal(date) {
   const d = new Date(date);
-  d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
-  return d.toISOString().slice(0, 16);
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  const hours = String(d.getHours()).padStart(2, '0');
+  const minutes = String(d.getMinutes()).padStart(2, '0');
+  return `${year}-${month}-${day}T${hours}:${minutes}`;
 }
