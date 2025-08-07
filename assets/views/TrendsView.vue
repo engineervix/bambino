@@ -108,7 +108,7 @@
     <!-- Daily Totals Section -->
     <v-row class="mb-4">
       <!-- Feeds today -->
-      <v-col cols="6" sm="6" md="3">
+      <v-col :cols="currentBaby.track_sleep ? '6' : '4'" :sm="currentBaby.track_sleep ? '6' : '4'" :md="currentBaby.track_sleep ? '3' : '4'">
         <v-card elevation="2" class="pa-4 pa-sm-5 text-center h-100 position-relative overflow-hidden">
           <!-- Background gradient -->
           <div
@@ -137,7 +137,7 @@
       </v-col>
 
       <!-- Pumping today -->
-      <v-col cols="6" sm="6" md="3">
+      <v-col :cols="currentBaby.track_sleep ? '6' : '4'" :sm="currentBaby.track_sleep ? '6' : '4'" :md="currentBaby.track_sleep ? '3' : '4'">
         <v-card elevation="2" class="pa-4 pa-sm-5 text-center h-100 position-relative overflow-hidden">
           <!-- Background gradient -->
           <div
@@ -166,7 +166,7 @@
       </v-col>
 
       <!-- Diapers today -->
-      <v-col cols="6" sm="6" md="3">
+      <v-col :cols="currentBaby.track_sleep ? '6' : '4'" :sm="currentBaby.track_sleep ? '6' : '4'" :md="currentBaby.track_sleep ? '3' : '4'">
         <v-card elevation="2" class="pa-4 pa-sm-5 text-center h-100 position-relative overflow-hidden">
           <!-- Background gradient -->
           <div
@@ -297,7 +297,7 @@
       </v-col>
 
       <!-- Last Feed -->
-      <v-col cols="12" sm="6">
+      <v-col :cols="currentBaby.track_sleep ? '12' : '12'" :sm="currentBaby.track_sleep ? '6' : '6'">
         <v-card
           elevation="1"
           class="pa-4 pa-sm-5 h-100 position-relative overflow-hidden"
@@ -333,6 +333,44 @@
           </div>
         </v-card>
       </v-col>
+
+      <!-- Last Diaper (only shown when sleep tracking is disabled) -->
+      <v-col v-if="!currentBaby.track_sleep" cols="12" sm="6">
+        <v-card
+          elevation="1"
+          class="pa-4 pa-sm-5 h-100 position-relative overflow-hidden"
+          :class="{ 'border-thin': true }"
+          style="border-color: rgba(var(--v-theme-primary), 0.2)"
+        >
+          <!-- Subtle background pattern -->
+          <div
+            class="position-absolute w-100 h-100"
+            style="
+              top: 0;
+              left: 0;
+              background: linear-gradient(135deg, rgba(99, 102, 241, 0.06) 0%, rgba(236, 72, 153, 0.06) 100%);
+              border-radius: inherit;
+            "
+          ></div>
+
+          <div class="position-relative d-flex align-center">
+            <!-- Icon -->
+            <div class="mr-4">
+              <v-icon icon="mdi-toilet" :size="$vuetify.display.xs ? 40 : 48" color="accent2" />
+            </div>
+
+            <!-- Content -->
+            <div class="flex-grow-1">
+              <div class="text-subtitle-1 text-sm-h6 mb-1 font-weight-medium">Last diaper</div>
+              <div class="text-h6 text-sm-h5 font-weight-bold mb-1">
+                <span v-if="statsStore.loading">…</span>
+                <span v-else>{{ lastDiaperDisplay }}</span>
+              </div>
+              <div v-if="lastDiaperType" class="text-caption text-medium-emphasis">Type: {{ lastDiaperType }}</div>
+            </div>
+          </div>
+        </v-card>
+      </v-col>
     </v-row>
 
     <!-- Past 7 Days Averages -->
@@ -343,7 +381,7 @@
     </v-row>
     <v-row class="mb-4">
       <!-- Weekly activities -->
-      <v-col cols="12" sm="6" md="4">
+      <v-col :cols="currentBaby.track_sleep ? '12' : '12'" :sm="currentBaby.track_sleep ? '6' : '6'" :md="currentBaby.track_sleep ? '4' : '6'">
         <v-card elevation="2" class="pa-4 pa-sm-6 text-center h-100 position-relative overflow-hidden">
           <!-- Background gradient -->
           <div
@@ -432,7 +470,7 @@
       </v-col>
 
       <!-- Avg Counts -->
-      <v-col cols="12" md="4">
+      <v-col :cols="currentBaby.track_sleep ? '12' : '12'" :sm="currentBaby.track_sleep ? '12' : '6'" :md="currentBaby.track_sleep ? '4' : '6'">
         <v-card elevation="2" class="pa-4 pa-sm-6 h-100 position-relative overflow-hidden">
           <!-- Background gradient -->
           <div
@@ -736,6 +774,21 @@ const lastFeedAmount = computed(() => {
   const feed = statsStore.recent?.last_feed;
   if (!feed?.amount_ml) return "";
   return `${feed.amount_ml} ml`;
+});
+
+const lastDiaperDisplay = computed(() => {
+  const diaper = statsStore.recent?.last_diaper;
+  if (!diaper) return "—";
+  return formatTimeAgo(diaper.time);
+});
+
+const lastDiaperType = computed(() => {
+  const diaper = statsStore.recent?.last_diaper;
+  if (!diaper) return "";
+  const types = [];
+  if (diaper.wet) types.push("wet");
+  if (diaper.dirty) types.push("dirty");
+  return types.length > 0 ? types.join(" & ") : "";
 });
 
 const diapersToday = computed(() => {
