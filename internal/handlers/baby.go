@@ -182,5 +182,18 @@ func UpdateBaby(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, "failed to update baby")
 	}
 
-	return c.JSON(http.StatusOK, baby)
+	// Convert to response format for consistency
+	ageInDays := int(time.Since(baby.BirthDate).Hours() / 24)
+	response := BabyResponse{
+		ID:          baby.ID.String(),
+		Name:        baby.Name,
+		BirthDate:   baby.BirthDate,
+		TrackSleep:  baby.TrackSleep,
+		BirthWeight: baby.BirthWeight,
+		BirthHeight: baby.BirthHeight,
+		AgeInDays:   ageInDays,
+		AgeDisplay:  formatAge(ageInDays),
+	}
+
+	return c.JSON(http.StatusOK, response)
 }
