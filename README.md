@@ -10,7 +10,6 @@ A self-hosted baby activity tracking app for personal use. Tracks feeding, sleep
 
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
-**Table of Contents**  *generated with [DocToc](https://github.com/thlorenz/doctoc)*
 
 - [Features](#features)
 - [Tech stack](#tech-stack)
@@ -24,11 +23,11 @@ A self-hosted baby activity tracking app for personal use. Tracks feeding, sleep
     - [With Docker (Recommended)](#with-docker-recommended)
     - [With Local Binary](#with-local-binary)
   - [Creating a User](#creating-a-user)
+  - [Development Seed Data](#development-seed-data)
   - [Command-Line Help](#command-line-help)
 - [Testing](#testing)
 
 <!-- END doctoc generated TOC please keep comment here to allow auto update -->
-
 
 ## Features
 
@@ -74,16 +73,19 @@ just build
 The application can use either PostgreSQL or SQLite.
 
 If you are using PostgreSQL, start the container:
+
 ```bash
 just up
 ```
 
 Then, run the database migrations. It's recommended to use the binary:
+
 ```bash
 ./bin/bambino db migrate
 ```
 
 Alternatively, you can run the migrations without building the binary:
+
 ```bash
 go run cmd/bambino/main.go db migrate
 ```
@@ -93,14 +95,17 @@ go run cmd/bambino/main.go db migrate
 For development, you can run the backend and frontend separately.
 
 **Backend:**
+
 ```bash
 just run
 ```
 
 **Frontend:**
+
 ```bash
 npm run dev
 ```
+
 The application will be available at `http://localhost:5173`.
 
 ### Production Mode
@@ -165,6 +170,7 @@ You can also run a production-like instance locally without Docker. This uses th
 just build
 ENV=production ./bin/bambino serve
 ```
+
 The application will be available at `http://localhost:8080`.
 
 ### Creating a User
@@ -174,6 +180,22 @@ Create an initial user and baby. The date should be in `YYYY-MM-DD` format.
 ```bash
 ./bin/bambino create-user -u <username> -b <babyname> -d <date_of_birth>
 ```
+
+### Development Seed Data
+
+For development purposes, you can quickly populate the database with test data using the seed command:
+
+```bash
+./bin/bambino seed
+```
+
+This will create:
+
+- A test user with username `testuser` and password `password123`
+- A test baby named "Test Baby" (6 months old)
+- Sample activities (feeding, diaper change, sleep)
+
+**Note**: The seed command is only available in development environments and will refuse to run if `ENV=production`.
 
 ### Command-Line Help
 
