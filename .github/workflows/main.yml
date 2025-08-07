@@ -30,7 +30,7 @@ jobs:
         run: npm run lint
 
       - name: Prettier check
-        run: npx run format
+        run: npm run format
 
       - name: Build frontend
         run: npm run build
