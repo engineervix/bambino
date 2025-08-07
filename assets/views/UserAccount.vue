@@ -43,8 +43,19 @@
                     <v-list-item-subtitle>
                       Born {{ formatDate(baby.birth_date) }} • {{ baby.age_display }}
                     </v-list-item-subtitle>
-                    <template v-slot:append v-if="baby.id === currentBaby?.id">
-                      <v-icon color="primary">mdi-check-circle</v-icon>
+                    <template v-slot:append>
+                      <div class="d-flex align-center ga-3">
+                        <v-switch
+                          v-model="baby.track_sleep"
+                          label="Track Sleep"
+                          color="primary"
+                          density="compact"
+                          hide-details
+                          @change="updateTrackSleep(baby)"
+                          @click.stop
+                        ></v-switch>
+                        <v-icon v-if="baby.id === currentBaby?.id" color="primary">mdi-check-circle</v-icon>
+                      </div>
                     </template>
                   </v-list-item>
                 </v-list>
@@ -76,7 +87,7 @@ import { format } from "date-fns";
 
 const authStore = useAuthStore();
 const { username, loading, babies, currentBaby } = storeToRefs(authStore);
-const { logout, selectBaby } = authStore;
+const { logout, selectBaby, updateBaby } = authStore;
 
 async function handleLogout() {
   await logout();
@@ -84,5 +95,9 @@ async function handleLogout() {
 
 function formatDate(dateString) {
   return format(new Date(dateString), "MMM d, yyyy");
+}
+
+async function updateTrackSleep(baby) {
+  await updateBaby(baby.id, { track_sleep: baby.track_sleep });
 }
 </script>

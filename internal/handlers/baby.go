@@ -17,6 +17,7 @@ type BabyResponse struct {
 	ID          string    `json:"id"`
 	Name        string    `json:"name"`
 	BirthDate   time.Time `json:"birth_date"`
+	TrackSleep  bool      `json:"track_sleep"`
 	BirthWeight *float64  `json:"birth_weight,omitempty"`
 	BirthHeight *float64  `json:"birth_height,omitempty"`
 	AgeInDays   int       `json:"age_in_days"`
@@ -57,6 +58,7 @@ func GetBabies(c echo.Context) error {
 			ID:          baby.ID.String(),
 			Name:        baby.Name,
 			BirthDate:   baby.BirthDate,
+			TrackSleep:  baby.TrackSleep,
 			BirthWeight: baby.BirthWeight,
 			BirthHeight: baby.BirthHeight,
 			AgeInDays:   ageInDays,
@@ -135,4 +137,63 @@ func formatAge(days int) string {
 	}
 
 	return fmt.Sprintf("%s old", result)
+}
+
+type UpdateBabyRequest struct {
+	TrackSleep *bool `json:"track_sleep"`
+}
+
+func UpdateBaby(c echo.Context) error {
+	userID, ok := c.Get("user_id").(string)
+	if !ok {
+		return echo.NewHTTPError(http.StatusUnauthorized, "user not found in context")
+	}
+
+	db, ok := c.Get("db").(*gorm.DB)
+	if !ok {
+		return echo.NewHTTPError(http.StatusInternalServerError, "database connection error")
+	}
+
+	babyID := c.Param("baby_id")
+	if babyID == "" {
+		return echo.NewHTTPError(http.StatusBadRequest, "baby ID is required")
+	}
+
+	var req UpdateBabyRequest
+	if err := c.Bind(&req); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, "invalid request body")
+	}
+
+	// Find the baby and check if it belongs to the user
+	var baby models.Baby
+	if err := db.Where("id = ? AND user_id = ?", babyID, userID).First(&baby).Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return echo.NewHTTPError(http.StatusNotFound, "baby not found")
+		}
+		return echo.NewHTTPError(http.StatusInternalServerError, "database error")
+	}
+
+	// Update the baby's track_sleep field
+	if req.TrackSleep != nil {
+		baby.TrackSleep = *req.TrackSleep
+	}
+
+	if err := db.Save(&baby).Error; err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, "failed to update baby")
+	}
+
+	// Convert to response format for consistency
+	ageInDays := int(time.Since(baby.BirthDate).Hours() / 24)
+	response := BabyResponse{
+		ID:          baby.ID.String(),
+		Name:        baby.Name,
+		BirthDate:   baby.BirthDate,
+		TrackSleep:  baby.TrackSleep,
+		BirthWeight: baby.BirthWeight,
+		BirthHeight: baby.BirthHeight,
+		AgeInDays:   ageInDays,
+		AgeDisplay:  formatAge(ageInDays),
+	}
+
+	return c.JSON(http.StatusOK, response)
 }
